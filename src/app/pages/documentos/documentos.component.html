@@ -1,1 +1,24 @@
-<p>documentos works!</p>
+<p-toast />
+<div class="container">
+  <p-fluid class="flex flex-col md:flex-row gap-8">
+    <div class="md:w-1/2">
+      <div class="card flex flex-col gap-4">
+        <h3>Reporte de Documentos Generados por la IA</h3>
+        <div class="m-2">
+          <button pButton label="Buscar" icon="pi pi-search" (click)="displayFiltros = true" class="redbutton" [style]="{ width: 'auto' }"></button>
+        </div>
+        <!-- Alineado a la derecha <div class="flex justify-between items-center m-2">
+          <h3 class="m-0">Reporte de Documentos Generados por la IA</h3>
+          <p-button
+            label="Buscar"
+            icon="pi pi-search"
+            (onClick)="displayFiltros = true"
+            styleClass="p-button-danger"
+            [style]="{ width: 'auto' }">
+          </p-button>
+        </div>-->
+      </div>
+    </div>
+  </p-fluid>
+ 
+</div>
