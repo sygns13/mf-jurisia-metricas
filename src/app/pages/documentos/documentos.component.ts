@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { PaginatorModule } from 'primeng/paginator';
 import { FluidModule } from 'primeng/fluid';
 import { InputTextModule } from 'primeng/inputtext';
-import { ButtonModule } from 'primeng/button';
+import {Button, ButtonDirective, ButtonModule} from 'primeng/button';
 import { FormsModule } from '@angular/forms';
 import { TextareaModule } from 'primeng/textarea';
 import { SelectModule  } from 'primeng/select';
@@ -31,27 +31,55 @@ import { Documento } from 'src/app/interfaces/documento';
 const environment = (window as any).__env as any;
 
 @Component({
-  selector: 'app-documentos',
-  imports: [CommonModule, SelectModule , TableModule, InputTextModule, FluidModule, ButtonModule, FormsModule, TextareaModule, MessageModule, ToastModule, PanelMenuModule, PaginatorModule, SoloNumerosEnterosDirective, TooltipModule, DialogModule],
-  providers: [MessageService],
-  templateUrl: './documentos.component.html',
-  styleUrl: './documentos.component.scss'
+    selector: 'app-documentos',
+    imports: [
+        CommonModule,
+        SelectModule,
+        TableModule,
+        InputTextModule,
+        FluidModule,
+        ButtonModule,
+        FormsModule,
+        TextareaModule,
+        MessageModule,
+        ToastModule,
+        PanelMenuModule,
+        PaginatorModule,
+        SoloNumerosEnterosDirective,
+        TooltipModule,
+        DialogModule,
+        ButtonDirective,
+        Button,
+        ButtonDirective,
+        Button
+    ],
+    providers: [MessageService],
+    templateUrl: './documentos.component.html',
+    styleUrl: './documentos.component.scss'
 })
-
 export class DocumentosComponent {
+    private env = environment;
 
-  private env = environment;
+    displayFiltros: boolean = false;
+    isTyping: boolean = false;
+    loaderMessage: string='';
+    botonLoader: boolean = false;
+    expedientes: Expediente[] = [];
+    displayFiltroExpedientes: boolean = false;
 
-  displayFiltros: boolean = false;
+    constructor(
+        private service: MessageService,
+        private documentoService: DocumentoService,
+        private tipodocumentoService: TipodocumentoService,
+        private expedientesService: ExpedientesService
+    ) {
+        console.log('Environment from Microfront:');
+        console.log(this.env);
+    }
 
-  constructor(
-    private service: MessageService,
-    private documentoService: DocumentoService,
-    private tipodocumentoService: TipodocumentoService,
-    private expedientesService: ExpedientesService) {
-
-    console.log('Environment from Microfront:');
-    console.log(this.env);
+  cerrarLoader(){
+    this.botonLoader=false;
+    this.isTyping = false;
+    this.loaderMessage = ''
   }
-
 }
