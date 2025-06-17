@@ -100,7 +100,7 @@
 
 <!--FILTROS-->
 <!-- LISTAR EXPEDIENTES -->
-<p-dialog [(visible)]="displayFiltroExpedientes"
+<p-dialog [(visible)]="displayFiltros"
           [breakpoints]="{ '960px': '75vw' }"
           [style]="{ width: '45vw' }"
           [modal]="true"
@@ -155,19 +155,7 @@
       </div>
     </div>
 
-    <div style="flex: 0 0 calc(33.333% - 16px); box-sizing: border-box;">
-      <div style="display: flex; flex-direction: column; gap: 4px;">
-        <label for="numero">Número</label>
-        <input pInputText id="numero" [(ngModel)]="numeroExpediente"
-               type="text" appSoloNumerosEnteros />
-      </div>
-    </div>
-    <div style="flex: 0 0 calc(33.333% - 16px); box-sizing: border-box;">
-      <div style="display: flex; flex-direction: column; gap: 4px;">
-        <label for="anio">Año</label>
-        <input pInputText id="anio" [(ngModel)]="anioExpediente" type="text" appSoloNumerosEnteros />
-      </div>
-    </div>
+
   </div>
   <ng-template #footer>
     <div style="width: 100%;">
@@ -176,7 +164,7 @@
         <button pButton
                 label="Buscar"
                 icon="pi pi-search"
-                (click)="buscarExpedientes(); displayFiltroExpedientes = false;"
+                (click)="buscarReporteDocGenerados; displayFiltros = false;"
                 class="redbutton"
                 [style]="{ width: 'auto' }">
         </button>

@@ -67,6 +67,22 @@ export class DocumentosComponent {
     expedientes: Expediente[] = [];
     displayFiltroExpedientes: boolean = false;
 
+    // Filtros
+    sedeSeleccionada: string | null = null;
+    instanciaSeleccionada: string | null = null;
+    especialidadSeleccionada: string | null = null;
+
+    // Listas de opciones
+    sedes: Sede[] = [];
+    instancias: Instancia[] = [];
+    instanciasFiltradas: Instancia[] = [];
+    especialidadesFiltradas: Especialidad[] = [];
+    especialidades: Especialidad[] = [];
+    tipoDocumentosFiltrados: TipoDocumento[] = [];
+    tipoDocumentos: TipoDocumento[] = [];
+    documentosFiltrados: Documento[] = [];
+    documentos: Documento[] = [];
+
     constructor(
         private service: MessageService,
         private documentoService: DocumentoService,
@@ -77,9 +93,103 @@ export class DocumentosComponent {
         console.log(this.env);
     }
 
+  ngOnInit(): void {
+    this.loadSedes();
+    this.loadInstancias();
+    this.loadEspecialidades();
+    this.loadTipoDocumentos();
+    this.loadDocumentos();
+  }
+
   cerrarLoader(){
     this.botonLoader=false;
     this.isTyping = false;
     this.loaderMessage = ''
   }
+
+  loadSedes(){
+      console.log("hola");
+    this.expedientesService.getSedes().subscribe({
+      next: (response: Sede[]) => {
+        this.sedes = response;
+        if (this.sedes.length > 0) {
+          this.sedeSeleccionada = this.sedes[0].codigoSede;
+          this.expedientesService.getInstancias().subscribe({
+            next: (response: Instancia[]) => {
+              this.instancias = response;
+              this.onSedeChange({ value: this.sedeSeleccionada });
+            },
+            error: (err) => {
+              console.error('Error al cargar instancias', err);
+            }
+          });
+        }
+      },
+      error: (err) => {
+        console.error('Error al cargar sedes', err);
+      }
+    });
+  }
+  onSedeChange(event: any) {
+    this.instanciaSeleccionada = null;
+    this.especialidadesFiltradas = [];
+    if (this.sedeSeleccionada) {
+      this.instanciasFiltradas = this.instancias.filter(instancia => instancia.codigoSede === this.sedeSeleccionada);
+    } else {
+      this.instanciasFiltradas = [];
+    }
+  }
+  loadInstancias(){
+    this.expedientesService.getInstancias().subscribe({
+      next: (response: Instancia[]) => {
+        this.instancias = response;
+      },
+      error: (err) => {
+        console.error('Error al cargar instancias', err);
+      }
+    });
+  }
+  onInstanciaChange(event: any) {
+    this.especialidadSeleccionada = null;
+    if (this.instanciaSeleccionada) {
+      this.especialidadesFiltradas = this.especialidades.filter(especialidad => especialidad.codigoInstancia === this.instanciaSeleccionada);
+    } else {
+      this.especialidadesFiltradas = [];
+    }
+  }
+  loadEspecialidades(){
+    this.expedientesService.getEspecialidades().subscribe({
+      next: (response: Especialidad[]) => {
+        this.especialidades = response;
+      },
+      error: (err) => {
+        console.error('Error al cargar especialidades', err);
+      }
+    });
+  }
+  loadTipoDocumentos(){
+    this.tipodocumentoService.getTipoDocumentos().subscribe({
+      next: (response: TipoDocumento[]) => {
+        this.tipoDocumentos = response;
+      },
+      error: (err) => {
+        console.error('Error al cargar tipo de cumentos', err);
+      }
+    });
+  }
+
+  loadDocumentos(){
+    this.documentoService.getDocumentos().subscribe({
+      next: (response: Documento[]) => {
+        this.documentos = response;
+      },
+      error: (err) => {
+        console.error('Error al cargar documentos', err);
+      }
+    });
+  }
+  buscarReporteDocGenerados(event: any) {
+
+  }
+
 }
