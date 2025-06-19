@@ -134,6 +134,29 @@
         (onPageChange)="onPaginar($event)">
       </p-paginator>
 
+      <!-- GRAFICOS -->
+      <div class="results-table" *ngIf="tipoReporte === 'GRAFICOS'">
+        <div style="display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center;">
+          <!-- Gráfico de barras horizontal -->
+          <div style="flex: 1 1 45%;">
+            <canvas baseChart
+                    [data]="{ labels: barChartLabels, datasets: barChartData }"
+                    [options]="barChartOptions"
+                    [type]="'bar'">
+            </canvas>
+          </div>
+
+          <!-- Gráfico de línea (para mostrar tendencia) -->
+          <div style="flex: 1 1 45%;">
+            <canvas baseChart
+                    [data]="{ labels: barChartLabels, datasets: barChartData }"
+                    [options]="{ responsive: true }"
+                    [type]="'line'">
+            </canvas>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>

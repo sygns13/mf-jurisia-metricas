@@ -2,7 +2,8 @@ import { Component, NgModule, ElementRef, ViewChild, AfterViewChecked } from '@a
 import { CommonModule } from '@angular/common';
 import { PaginatorModule } from 'primeng/paginator';
 import { CalendarModule } from 'primeng/calendar';
-
+import { NgChartsModule } from 'ng2-charts';
+import { ChartOptions, ChartType, ChartDataset } from 'chart.js';
 import { FluidModule } from 'primeng/fluid';
 import { InputTextModule } from 'primeng/inputtext';
 import {Button, ButtonDirective, ButtonModule} from 'primeng/button';
@@ -38,6 +39,7 @@ const environment = (window as any).__env as any;
         CommonModule,
         CalendarModule,
         SelectModule,
+      NgChartsModule,
         TableModule,
         InputTextModule,
         FluidModule,
@@ -98,6 +100,30 @@ export class DocumentosComponent {
     documentosFiltrados: Documento[] = [];
     documentos: Documento[] = [];
 
+    public barChartOptions: ChartOptions<'bar'> = {
+      responsive: true,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: true },
+        tooltip: { enabled: true }
+      },
+      scales: {
+        x: { beginAtZero: true }
+      }
+    };
+
+    public barChartLabels: string[] = ['ACTA', 'AUTO ADMISORIO', 'AUTO DE VISTA', 'AUTO FINAL'];
+
+    public barChartData: ChartDataset<'bar'>[] = [
+      {
+        label: 'Total Documentos 2025',
+        data: [34, 43, 92, 12],
+        backgroundColor: 'rgba(220, 53, 69, 0.6)',
+        borderColor: '#b00600',
+        borderWidth: 1
+      }
+    ];
+
     constructor(
         private service: MessageService,
         private documentoService: DocumentoService,
@@ -125,6 +151,8 @@ export class DocumentosComponent {
             this.buscarReporteDocGenerados();
         } else if (this.tipoReporte === 'ACUMULADO') {
             this.buscarReporteAcumulado();
+        } else if (this.tipoReporte === 'GRAFICOS') {
+            this.cargarGraficos();
         }
     }
 
@@ -174,7 +202,10 @@ export class DocumentosComponent {
         });
     }
 
+    cargarGraficos(){
+      this.isTyping = false;
 
+    }
     cerrarLoader() {
         this.botonLoader = false;
         this.isTyping = false;
