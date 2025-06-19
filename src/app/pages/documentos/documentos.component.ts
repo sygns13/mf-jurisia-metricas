@@ -1,6 +1,8 @@
 import { Component, NgModule, ElementRef, ViewChild, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PaginatorModule } from 'primeng/paginator';
+import { CalendarModule } from 'primeng/calendar';
+
 import { FluidModule } from 'primeng/fluid';
 import { InputTextModule } from 'primeng/inputtext';
 import {Button, ButtonDirective, ButtonModule} from 'primeng/button';
@@ -34,6 +36,7 @@ const environment = (window as any).__env as any;
     selector: 'app-documentos',
     imports: [
         CommonModule,
+        CalendarModule,
         SelectModule,
         TableModule,
         InputTextModule,
@@ -74,6 +77,15 @@ export class DocumentosComponent {
     especialidadSeleccionada: string | null = null;
     tipoDocumentoSeleccionado: number | null = null;
     documentoSeleccionado: number | null = null;
+    fechaInicio: Date  | null = null;
+    fechaFin: Date  | null = null;
+
+    totalRegistros: number = 0;
+    paginaActual: number = 0;
+    tamanioPagina: number = 10;
+
+    tipoReporte: 'DETALLADO' | 'ACUMULADO' | 'GRAFICOS' = 'DETALLADO';
+
 
     // Listas de opciones
     sedes: Sede[] = [];
@@ -97,12 +109,71 @@ export class DocumentosComponent {
     }
 
     ngOnInit(): void {
+        const hoy = new Date();
+        this.fechaFin = hoy;
+        this.fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+
         this.loadSedes();
         this.loadInstancias();
         this.loadEspecialidades();
         this.loadTipoDocumentos();
         this.loadDocumentos();
     }
+
+    onBuscar(): void {
+        if (this.tipoReporte === 'DETALLADO') {
+            this.buscarReporteDocGenerados();
+        } else if (this.tipoReporte === 'ACUMULADO') {
+            this.buscarReporteAcumulado();
+        }
+    }
+
+    buscarReporteAcumulado(): void {
+        const body = {
+            idUser: null,
+            documento: "",
+            apellidos: "",
+            nombres: "",
+            cargo: "",
+            username: "",
+            email: "",
+            typedoc: "",
+            codSede: this.sedeSeleccionada || "",
+            codInstancia: this.instanciaSeleccionada && this.instanciaSeleccionada !== '0' ? this.instanciaSeleccionada : "",
+            codEspecialidad: this.especialidadSeleccionada && this.especialidadSeleccionada !== '0' ? this.especialidadSeleccionada : "",
+            codMateria: "",
+            numeroExpediente: "",
+            yearExpediente: "",
+            idDocumento: this.documentoSeleccionado && this.documentoSeleccionado !== 0 ? this.documentoSeleccionado : "",
+            idTipoDocumento: this.tipoDocumentoSeleccionado && this.tipoDocumentoSeleccionado !== 0 ? this.tipoDocumentoSeleccionado : "",
+            nUnico: "",
+            xFormato: "",
+            dniDemandante: "",
+            dniDemandado: "",
+            templateCode: "",
+            templateID: 1,
+            fechaInicio: this.fechaInicio ? this.fechaInicio.toISOString().slice(0, 10) : "",
+            fechaFin: this.fechaFin ? this.fechaFin.toISOString().slice(0, 10) : "",
+        };
+
+        this.isTyping = true;
+        this.loaderMessage = 'Generando reporte acumulado...';
+        this.botonLoader = false;
+
+        this.documentoService.getTotalOperaciones(body).subscribe({
+            next: (res) => {
+                this.expedientes = Array.isArray(res) ? res : [res]; // en caso devuelva objeto único
+                this.totalRegistros = this.expedientes.length;
+                this.isTyping = false;
+            },
+            error: (err) => {
+                console.error('Error en reporte acumulado', err);
+                this.loaderMessage = 'Error al generar reporte acumulado.';
+                this.botonLoader = true;
+            }
+        });
+    }
+
 
     cerrarLoader() {
         this.botonLoader = false;
@@ -111,7 +182,6 @@ export class DocumentosComponent {
     }
 
     loadSedes() {
-        console.log('hola');
         this.expedientesService.getSedes().subscribe({
             next: (response: Sede[]) => {
                 this.sedes = response;
@@ -155,10 +225,35 @@ export class DocumentosComponent {
     onInstanciaChange(event: any) {
         this.especialidadSeleccionada = null;
         if (this.instanciaSeleccionada) {
-            this.especialidadesFiltradas = this.especialidades.filter((especialidad) => especialidad.codigoInstancia === this.instanciaSeleccionada);
+            const filtradas = this.especialidades.filter(e => e.codigoInstancia === this.instanciaSeleccionada);
+            this.especialidadesFiltradas = [
+                {
+                    codigoEspecialidad: '0',
+                    especialidad: 'TODOS',
+                    codigoInstancia: this.instanciaSeleccionada,
+                    codigoCodEspecialidad: '' // ← propiedad obligatoria
+                },
+                ...filtradas
+            ];
+            this.tipoDocumentoLoad();
+
         } else {
             this.especialidadesFiltradas = [];
         }
+    }
+    tipoDocumentoLoad() {
+        this.documentoSeleccionado = null;
+        this.tipoDocumentoSeleccionado = null;
+        this.documentosFiltrados = [];
+        const filtrados = this.tipoDocumentos.filter(td => td.idInstancia === this.instanciaSeleccionada);
+        this.tipoDocumentosFiltrados = [
+            {
+                idTipoDocumento: 0,
+                descripcion: 'TODOS',
+                idInstancia: this.instanciaSeleccionada || ''
+            },
+            ...filtrados
+        ];
     }
     loadEspecialidades() {
         this.expedientesService.getEspecialidades().subscribe({
@@ -174,6 +269,7 @@ export class DocumentosComponent {
         this.tipodocumentoService.getTipoDocumentos().subscribe({
             next: (response: TipoDocumento[]) => {
                 this.tipoDocumentos = response;
+                this.tipoDocumentoLoad();
             },
             error: (err) => {
                 console.error('Error al cargar tipo de cumentos', err);
@@ -182,8 +278,18 @@ export class DocumentosComponent {
     }
     onTipoDocumentoChange(event: any) {
       this.documentoSeleccionado = null;
-      if (this.tipoDocumentoSeleccionado) {
-        this.documentosFiltrados = this.documentos.filter(documentos => documentos.idTipoDocumento === this.tipoDocumentoSeleccionado);
+      if (this.tipoDocumentoSeleccionado || this.tipoDocumentoSeleccionado===0) {
+          const filtrados = this.documentos.filter(doc => doc.idTipoDocumento === this.tipoDocumentoSeleccionado);
+
+          this.documentosFiltrados = [
+              {
+                  idDocumento: 0,
+                  descripcion: 'TODOS',
+                  idTipoDocumento: this.tipoDocumentoSeleccionado,
+                  codigoTemplate: ''
+              },
+              ...filtrados
+          ];
       } else {
         this.documentosFiltrados = [];
       }
@@ -198,5 +304,58 @@ export class DocumentosComponent {
             }
         });
     }
-    buscarReporteDocGenerados(event: any) {}
+    buscarReporteDocGenerados(page: number = 0): void {
+        const body = {
+            idUser: null,
+            documento: "",
+            apellidos: "",
+            nombres: "",
+            cargo: "",
+            username: "",
+            email: "",
+            typedoc: "",
+            codSede: this.sedeSeleccionada || "",
+            codInstancia: this.instanciaSeleccionada && this.instanciaSeleccionada !== '0' ? this.instanciaSeleccionada : "",
+            codEspecialidad: this.especialidadSeleccionada && this.especialidadSeleccionada !== '0' ? this.especialidadSeleccionada : "",
+            codMateria: "",
+            numeroExpediente: "",
+            yearExpediente: "",
+            idDocumento: this.documentoSeleccionado && this.documentoSeleccionado !== 0 ? this.documentoSeleccionado : "",
+            idTipoDocumento: this.tipoDocumentoSeleccionado && this.tipoDocumentoSeleccionado !== 0 ? this.tipoDocumentoSeleccionado : "",
+            nUnico: "",
+            xFormato: "",
+            dniDemandante: "",
+            dniDemandado: "",
+            templateCode: "",
+            templateID: "",
+            fechaInicio: this.fechaInicio ? this.fechaInicio.toISOString().slice(0, 10) : "",
+            fechaFin: this.fechaFin ? this.fechaFin.toISOString().slice(0, 10) : "",
+        };
+
+        this.isTyping = true;
+        this.loaderMessage = 'Generando reporte...';
+        this.botonLoader = false;
+
+        this.documentoService.getDocumentoGeneradoDataPaginated(body, page, this.tamanioPagina).subscribe({
+            next: (res) => {
+                this.expedientes = res.content || [];
+                this.totalRegistros = res.totalElements;
+                this.paginaActual = res.number;
+                this.isTyping = false;
+            },
+            error: (err) => {
+                console.error('Error al buscar documentos generados', err);
+                this.loaderMessage = 'Error al generar el reporte.';
+                this.botonLoader = true;
+            }
+        });
+    }
+    onPaginar(event: any): void {
+        this.tamanioPagina = event.rows;
+        this.paginaActual = event.page;
+        this.buscarReporteDocGenerados(this.paginaActual);
+    }
+
+
+
 }

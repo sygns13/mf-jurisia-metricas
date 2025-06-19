@@ -7,6 +7,7 @@ import { delay, Observable, of, pipe, tap } from 'rxjs';
 const environment = (window as any).__env as any;
 
 const baseUrl = `${environment.API_GATEWAY_URL}/${environment.API_PATH_METRICAS}`;
+const baseUrlDoc = `${environment.API_GATEWAY_URL}/${environment.API_PATH_EXPEDIENTES}`;
 
 @Injectable({
   providedIn: 'root'
@@ -17,7 +18,7 @@ export class DocumentoService {
                 public router: Router) { }
 
     getDocumentos(): Observable<Documento[]> {
-      return this.http.get<Documento[]>(`${baseUrl}/documento`);
+      return this.http.get<Documento[]>(`${baseUrlDoc}/documento`);
     }
 
   getDocumentoGenerado(nUnico: number, codigoTemplate: string): Observable<ResponseDocumentHTML> {
@@ -28,6 +29,17 @@ export class DocumentoService {
     const url = `${baseUrl}/documento/generar-documento-docx/${nUnico}/${codigoTemplate}`;
     return this.http.get(url, { responseType: 'blob' });
   }
+
+    getDocumentoGeneradoDataPaginated(body: any, page: number = 0, size: number = 10): Observable<any> {
+        const url = `${baseUrl}/documento-generado-ia/get-data?page=${page}&size=${size}`;
+        return this.http.post<any>(url, body);
+    }
+
+    getTotalOperaciones(body: any): Observable<any> {
+        const url = `${baseUrl}/documento-generado-ia/gettotaloperaciones`;
+        return this.http.post<any>(url, body);
+    }
+
 
 
 }

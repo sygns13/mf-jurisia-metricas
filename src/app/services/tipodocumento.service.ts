@@ -6,6 +6,7 @@ import { delay, Observable, of, pipe, tap } from 'rxjs';
 const environment = (window as any).__env as any;
 
 const baseUrl = `${environment.API_GATEWAY_URL}/${environment.API_PATH_METRICAS}`;
+const baseUrlDoc = `${environment.API_GATEWAY_URL}/${environment.API_PATH_EXPEDIENTES}`;
 
 @Injectable({
   providedIn: 'root'
@@ -16,6 +17,6 @@ export class TipodocumentoService {
               public router: Router) { }
 
   getTipoDocumentos(): Observable<TipoDocumento[]> {
-    return this.http.get<TipoDocumento[]>(`${baseUrl}/tipodocumento`);
-  }                
+    return this.http.get<TipoDocumento[]>(`${baseUrlDoc}/tipodocumento`);
+  }
 }

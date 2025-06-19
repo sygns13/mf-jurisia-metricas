@@ -4,19 +4,31 @@
     <div class="md:w-1/2">
       <div class="card flex flex-col gap-4">
         <h3>Reporte de Documentos Generados por la IA</h3>
-        <div class="m-2">
-          <button pButton label="Buscar" icon="pi pi-search" (click)="displayFiltros = true" class="redbutton" [style]="{ width: 'auto' }"></button>
+        <div class="flex flex-row flex-wrap gap-2 m-2">
+          <button pButton
+                  label="Reporte Detallado"
+                  icon="pi pi-list"
+                  class="redbutton"
+                  (click)="tipoReporte = 'DETALLADO'; displayFiltros = true"
+                  [style]="{ width: 'auto' }">
+          </button>
+
+          <button pButton
+                  label="Reporte Acumulado"
+                  icon="pi pi-database"
+                  class="redbutton"
+                  (click)="tipoReporte = 'ACUMULADO'; displayFiltros = true"
+                  [style]="{ width: 'auto' }">
+          </button>
+
+          <button pButton
+                  label="Reporte Gráficos"
+                  icon="pi pi-chart-bar"
+                  class="redbutton"
+                  (click)="tipoReporte = 'GRAFICOS'; displayFiltros = true"
+                  [style]="{ width: 'auto' }">
+          </button>
         </div>
-        <!-- Alineado a la derecha <div class="flex justify-between items-center m-2">
-          <h3 class="m-0">Reporte de Documentos Generados por la IA</h3>
-          <p-button
-            label="Buscar"
-            icon="pi pi-search"
-            (onClick)="displayFiltros = true"
-            styleClass="p-button-danger"
-            [style]="{ width: 'auto' }">
-          </p-button>
-        </div>-->
       </div>
     </div>
   </p-fluid>
@@ -64,34 +76,64 @@
 <div class="p-fluid box">
   <div class="p-field p-grid">
     <div class="results-table">
-      <p-table [value]="expedientes" showGridlines [responsiveLayout]="'scroll'">
+      <p-table *ngIf="tipoReporte === 'DETALLADO'" [value]="expedientes" showGridlines [responsiveLayout]="'scroll'">
         <ng-template pTemplate="header">
           <tr>
-            <th>Expediente</th>
-            <th>Instancia Actual</th>
-            <th>Ubicación</th>
-            <th>Estado</th>
-            <th>Tipo Expediente</th>
-            <th>Acciones</th>
+            <th>INSTANCIA</th>
+            <th>ESPECIALIDAD</th>
+            <th>MATERIA</th>
+            <th>TIPO DOCUMENTO</th>
+            <th>DOCUMENTO</th>
+            <th>UBICACIÓN</th>
+            <th>JUEZ</th>
+            <th>FECHA GENERADO</th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-expediente>
           <tr>
-            <td>{{ expediente.fullNumeroExpediente }}</td>
             <td>{{ expediente.instancia }}</td>
-            <td>{{ expediente.descUbicacion }}</td>
-            <td>{{ expediente.descEstado }}</td>
-            <td>{{ expediente.tipoExpediente }}</td>
-            <td>
-            </td>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="5">No se encontraron expedientes.</td>
+            <td>{{ expediente.especialidad }}</td>
+            <td>{{ expediente.materia }}</td>
+            <td>{{ expediente.tipoDocumento }}</td>
+            <td>{{ expediente.documento }}</td>
+            <td>{{ expediente.ubicacion }}</td>
+            <td>{{ expediente.juez }}</td>
+            <td>{{ expediente.regDate }}</td>
           </tr>
         </ng-template>
       </p-table>
+
+      <p-table *ngIf="tipoReporte === 'ACUMULADO'" [value]="expedientes" showGridlines [responsiveLayout]="'scroll'">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>INSTANCIA</th>
+            <th>ESPECIALIDAD</th>
+            <th>MATERIA</th>
+            <th>TIPO DOCUMENTO</th>
+            <th>DOCUMENTO</th>
+            <th>JUEZ</th>
+            <th class="text-right">TOTAL</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-item>
+          <tr>
+            <td>{{ item.instancia }}</td>
+            <td>{{ item.especialidad }}</td>
+            <td>{{ item.materia }}</td>
+            <td>{{ item.tipoDocumento }}</td>
+            <td>{{ item.documento }}</td>
+            <td>{{ item.juez }}</td>
+            <td class="text-right">{{ item.totalDocsGenerados }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+      <p-paginator
+        [rows]="tamanioPagina"
+        [totalRecords]="totalRegistros"
+        [rowsPerPageOptions]="[5, 10, 20, 50]"
+        (onPageChange)="onPaginar($event)">
+      </p-paginator>
+
     </div>
   </div>
 </div>
@@ -108,7 +150,7 @@
 
   <ng-template #header>
     <div class="inline-flex items-center justify-center gap-2" style="color: white;">
-      <span class="font-bold whitespace-nowrap">LISTAR EXPEDIENTE</span>
+      <span class="font-bold whitespace-nowrap">FILTROS PARA GENERAR REPORTE</span>
     </div>
   </ng-template>
 
@@ -142,7 +184,7 @@
       </div>
     </div>
 
-    <div style="flex: 0 0 calc(33.333% - 16px); box-sizing: border-box;">
+    <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;">
       <div style="display: flex; flex-direction: column; gap: 4px;">
         <label for="especialidad">Especialidad</label>
         <p-select id="especialidad" [(ngModel)]="especialidadSeleccionada"
@@ -154,17 +196,54 @@
         </p-select>
       </div>
     </div>
-
-    <div class="flex align-items-center justify-content-center w-5rem h-5rem font-bold border-round m-2">
-      <div class="flex flex-col gap-2" style="padding: 10px; width: 250px;">
+    <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
         <label for="tipoDoc">Tipo de Documento</label>
-        <p-select id="tipoDoc" [(ngModel)]="tipoDocumentoSeleccionado" [options]="tipoDocumentosFiltrados" (onChange)="onTipoDocumentoChange($event)" optionLabel="descripcion" optionValue="idTipoDocumento" placeholder="Seleccione Tipo de Documento" #cbuTipoDocumento></p-select>
+        <p-select id="tipoDoc" [(ngModel)]="tipoDocumentoSeleccionado"
+                  [options]="tipoDocumentosFiltrados"
+                  (onChange)="onTipoDocumentoChange($event)"
+                  optionLabel="descripcion"
+                  optionValue="idTipoDocumento"
+                  placeholder="Seleccione Tipo de Documento"
+                  #cbuTipoDocumento>
+        </p-select>
       </div>
     </div>
-    <div class="flex align-items-center justify-content-center w-5rem h-5rem font-bold border-round m-2">
-      <div class="flex flex-col gap-2" style="padding: 10px; width: 250px;">
+    <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
         <label for="documento">Documento</label>
-        <p-select id="documento" [(ngModel)]="documentoSeleccionado" [options]="documentosFiltrados" optionLabel="descripcion" optionValue="idDocumento" placeholder="Seleccione Documento" #cbuDocumento></p-select>
+        <p-select id="documento" [(ngModel)]="documentoSeleccionado"
+                  [options]="documentosFiltrados"
+                  optionLabel="descripcion"
+                  optionValue="idDocumento"
+                  placeholder="Seleccione Documento"
+                  #cbuDocumento>
+        </p-select>
+      </div>
+    </div>
+    <div style="flex: 0 0 calc(25% - 16px); box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label for="documento">Fecha Inicio</label>
+        <p-calendar [(ngModel)]="fechaInicio"
+                    dateFormat="dd/mm/yy"
+                    showIcon="true"
+                    [showButtonBar]="true"
+                    inputId="fechaInicio"
+                    [style]="{ width: '100%' }">
+        </p-calendar>
+
+      </div>
+    </div>
+    <div style="flex: 0 0 calc(25% - 16px); box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label for="documento">Fecha Fin</label>
+        <p-calendar [(ngModel)]="fechaFin"
+                    dateFormat="dd/mm/yy"
+                    showIcon="true"
+                    [showButtonBar]="true"
+                    inputId="fechaFin"
+                    [style]="{ width: '100%' }">
+        </p-calendar>
       </div>
     </div>
 
@@ -177,7 +256,7 @@
         <button pButton
                 label="Buscar"
                 icon="pi pi-search"
-                (click)="buscarReporteDocGenerados; displayFiltros = false;"
+                (click)="onBuscar(); displayFiltros = false;"
                 class="redbutton"
                 [style]="{ width: 'auto' }">
         </button>
