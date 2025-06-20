@@ -1,24 +1,241 @@
 <p-toast />
-<div class="container">
-  <p-fluid class="flex flex-col md:flex-row gap-8">
-    <div class="md:w-1/2">
-      <div class="card flex flex-col gap-4">
-        <h3>Reporte de Consultas y Uso de la IA</h3>
-        <div class="m-2">
-          <button pButton label="Buscar" icon="pi pi-search" (click)="displayFiltros = true" class="redbutton" [style]="{ width: 'auto' }"></button>
+  <div class="container">
+    <p-fluid class="flex flex-col md:flex-row gap-8">
+      <div class="md:w-1/2">
+        <div class="card flex flex-col gap-4">
+          <h3>Reporte de Consultas y Uso de la IA</h3>
+          <div class="flex flex-row flex-wrap gap-2 m-2">
+            <button pButton
+                    label="Reporte Detallado"
+                    icon="pi pi-list"
+                    class="redbutton"
+                    (click)="tipoReporte = 'DETALLADO'; displayFiltros = true"
+                    [style]="{ width: 'auto' }">
+            </button>
+
+            <button pButton
+                    label="Reporte Acumulado"
+                    icon="pi pi-database"
+                    class="redbutton"
+                    (click)="tipoReporte = 'ACUMULADO'; displayFiltros = true"
+                    [style]="{ width: 'auto' }">
+            </button>
+
+            <button pButton
+                    label="Reporte Gráficos"
+                    icon="pi pi-chart-bar"
+                    class="redbutton"
+                    (click)="tipoReporte = 'GRAFICOS'; displayFiltros = true"
+                    [style]="{ width: 'auto' }">
+            </button>
+          </div>
         </div>
-        <!-- Alineado a la derecha <div class="flex justify-between items-center m-2">
-          <h3 class="m-0">Reporte de Documentos Generados por la IA</h3>
-          <p-button
-            label="Buscar"
-            icon="pi pi-search"
-            (onClick)="displayFiltros = true"
-            styleClass="p-button-danger"
-            [style]="{ width: 'auto' }">
-          </p-button>
-        </div>-->
       </div>
+    </p-fluid>
+  </div>
+
+  <!--FILTROS-->
+  <p-dialog [(visible)]="displayFiltros"
+            [breakpoints]="{ '960px': '75vw' }"
+            [style]="{ width: '45vw' }"
+            [modal]="true"
+            [contentStyle]="{ 'overflow': 'visible' }">
+
+    <ng-template #header>
+      <div class="inline-flex items-center justify-center gap-2" style="color: white;">
+        <span class="font-bold whitespace-nowrap">FILTROS PARA GENERAR REPORTE</span>
+      </div>
+    </ng-template>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+      <!-- Contenedor individual -->
+      <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label for="sede">Sede</label>
+          <p-select id="sede" [(ngModel)]="sedeSeleccionada"
+                    [options]="sedes"
+                    optionLabel="sede"
+                    optionValue="codigoSede"
+                    placeholder="Seleccione Sede"
+                    (onChange)="onSedeChange($event)"
+                    [filter]="true" filterBy="sede">
+          </p-select>
+        </div>
+      </div>
+
+      <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label for="instancia">Instancia</label>
+          <p-select id="instancia" [(ngModel)]="instanciaSeleccionada"
+                    [options]="instanciasFiltradas"
+                    optionLabel="instancia"
+                    optionValue="codigoInstancia"
+                    placeholder="Seleccione Instancia"
+                    (onChange)="onInstanciaChange($event)"
+                    [filter]="true" filterBy="instancia">
+          </p-select>
+        </div>
+      </div>
+
+      <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label for="especialidad">Especialidad</label>
+          <p-select id="especialidad" [(ngModel)]="especialidadSeleccionada"
+                    [options]="especialidadesFiltradas"
+                    optionLabel="especialidad"
+                    optionValue="codigoEspecialidad"
+                    placeholder="Seleccione Especialidad"
+                    [filter]="true" filterBy="especialidad">
+          </p-select>
+        </div>
+      </div>
+      <div style="flex: 0 0 calc(25% - 16px); box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label>Fecha Inicio</label>
+          <p-calendar [(ngModel)]="fechaInicio"
+                      dateFormat="dd/mm/yy"
+                      showIcon="true"
+                      [showButtonBar]="true"
+                      inputId="fechaInicio"
+                      [style]="{ width: '100%' }">
+          </p-calendar>
+
+        </div>
+      </div>
+      <div style="flex: 0 0 calc(25% - 16px); box-sizing: border-box;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <label>Fecha Fin</label>
+          <p-calendar [(ngModel)]="fechaFin"
+                      dateFormat="dd/mm/yy"
+                      showIcon="true"
+                      [showButtonBar]="true"
+                      inputId="fechaFin"
+                      [style]="{ width: '100%' }">
+          </p-calendar>
+        </div>
+      </div>
+
+
     </div>
-  </p-fluid>
- 
+    <ng-template #footer>
+      <div style="width: 100%;">
+        <hr style="width: 100%; border: none; border-top: 1px solid #ccc; margin-bottom: 1rem;margin-top: 0px!important;">
+        <div style="display: flex; justify-content: flex-end;">
+          <button pButton
+                  label="Buscar"
+                  icon="pi pi-search"
+                  (click)="onBuscar(); displayFiltros = false;"
+                  class="redbutton"
+                  [style]="{ width: 'auto' }">
+          </button>
+        </div>
+      </div>
+    </ng-template>
+  </p-dialog>
+
+<!--TABLA DE RESULTADOS-->
+<div class="p-fluid box">
+  <div class="p-field p-grid">
+    <div class="results-table">
+      <div class="results-table" *ngIf="tipoReporte === 'DETALLADO' && buscado">
+        <p-table *ngIf="tipoReporte === 'DETALLADO'" [value]="expedientes" showGridlines [responsiveLayout]="'scroll'">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>INSTANCIA</th>
+              <th>ESPECIALIDAD</th>
+              <th>MATERIA</th>
+              <th>TIPO DOCUMENTO</th>
+              <th>DOCUMENTO</th>
+              <th>UBICACIÓN</th>
+              <th>JUEZ</th>
+              <th>FECHA GENERADO</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-expediente>
+            <tr>
+              <td>{{ expediente.instancia }}</td>
+              <td>{{ expediente.especialidad }}</td>
+              <td>{{ expediente.materia }}</td>
+              <td>{{ expediente.tipoDocumento }}</td>
+              <td>{{ expediente.documento }}</td>
+              <td>{{ expediente.ubicacion }}</td>
+              <td>{{ expediente.juez }}</td>
+              <td>{{ expediente.regDate }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+        <p-paginator
+          [rows]="tamanioPagina"
+          [totalRecords]="totalRegistros"
+          [rowsPerPageOptions]="[5, 10, 20, 50]"
+          (onPageChange)="onPaginar($event)">
+        </p-paginator>
+      </div>
+      <div class="results-table" *ngIf="tipoReporte === 'ACUMULADO' && buscado">
+        <p-table [value]="expedientes" showGridlines [responsiveLayout]="'scroll'">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>INSTANCIA</th>
+              <th>ESPECIALIDAD</th>
+              <th>MATERIA</th>
+              <th>TIPO DOCUMENTO</th>
+              <th>DOCUMENTO</th>
+              <th>JUEZ</th>
+              <th class="text-right">TOTAL</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-item>
+            <tr>
+              <td>{{ item.instancia }}</td>
+              <td>{{ item.especialidad }}</td>
+              <td>{{ item.materia }}</td>
+              <td>{{ item.tipoDocumento }}</td>
+              <td>{{ item.documento }}</td>
+              <td>{{ item.juez }}</td>
+              <td class="text-right">{{ item.totalDocsGenerados }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+        <p-paginator
+          [rows]="tamanioPagina"
+          [totalRecords]="totalRegistros"
+          [rowsPerPageOptions]="[5, 10, 20, 50]"
+          (onPageChange)="onPaginar($event)">
+        </p-paginator>
+      </div>
+      <!-- GRAFICOS -->
+      <div class="results-table" *ngIf="tipoReporte === 'GRAFICOS' && buscado">
+        <div *ngFor="let grafico of graficosPorEspecialidad" style="margin-bottom: 3rem;">
+          <h4 style="text-align: center;">{{ grafico.nombre }}</h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center;">
+
+            <!-- Gráfico de barras -->
+            <div style="flex: 0 0 calc(40% - 16px)">
+              <canvas baseChart
+                      [data]="{ labels: grafico.labels, datasets: grafico.barData }"
+                      [options]="barChartOptions"
+                      [type]="'bar'">
+              </canvas>
+            </div>
+
+            <!-- Gráfico de líneas -->
+            <div style="flex: 0 0 calc(40% - 16px)">
+              <canvas baseChart
+                      [data]="{ labels: grafico.labels, datasets: grafico.lineData }"
+                      [options]="lineChartOptions"
+                      [type]="'line'">
+              </canvas>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+
+
+    </div>
+  </div>
 </div>
+<!--TABLA DE RESULTADOS-->
+
+

@@ -33,6 +33,35 @@ import { Documento } from 'src/app/interfaces/documento';
 
 const environment = (window as any).__env as any;
 
+interface DocumentoResumen {
+  documento: string;
+  total: number;
+}
+
+interface TipoDocumentoResumen {
+  tipoDocumento: string;
+  documentos: DocumentoResumen[];
+}
+
+interface EspecialidadResumen {
+  nombre: string;
+  tiposDocumento: TipoDocumentoResumen[];
+}
+
+interface DataGraficos {
+  instancia: string;
+  juez: string;
+  especialidades: EspecialidadResumen[];
+}
+
+interface GraficoPorEspecialidad {
+  nombre: string;
+  labels: string[];
+  barData: ChartDataset<'bar'>[];
+  lineData: ChartDataset<'line'>[];
+}
+
+
 @Component({
     selector: 'app-documentos',
     imports: [
@@ -86,10 +115,28 @@ export class DocumentosComponent {
     paginaActual: number = 0;
     tamanioPagina: number = 10;
 
-    tipoReporte: 'DETALLADO' | 'ACUMULADO' | 'GRAFICOS' = 'DETALLADO';
+    tipoReporte: 'DETALLADO' | 'ACUMULADO' | 'GRAFICOS' | '' = '';
+    buscado: boolean = false;
+
+    //Listas para grafico
+    public barChartOptions: ChartOptions<'bar'> | undefined;
+    public barChartLabels: string[] = [];
+    public barChartData: ChartDataset<'bar'>[] = [];
+
+    public graficosPorEspecialidad: GraficoPorEspecialidad[] = [];
+    public lineChartOptions: ChartOptions<'line'> = {
+      responsive: true,
+      plugins: {
+        legend: { display: true },
+        tooltip: { enabled: true }
+      },
+      scales: {
+        y: { beginAtZero: true }
+      }
+    };
 
 
-    // Listas de opciones
+  // Listas de opciones
     sedes: Sede[] = [];
     instancias: Instancia[] = [];
     instanciasFiltradas: Instancia[] = [];
@@ -99,30 +146,6 @@ export class DocumentosComponent {
     tipoDocumentos: TipoDocumento[] = [];
     documentosFiltrados: Documento[] = [];
     documentos: Documento[] = [];
-
-    public barChartOptions: ChartOptions<'bar'> = {
-      responsive: true,
-      indexAxis: 'y',
-      plugins: {
-        legend: { display: true },
-        tooltip: { enabled: true }
-      },
-      scales: {
-        x: { beginAtZero: true }
-      }
-    };
-
-    public barChartLabels: string[] = ['ACTA', 'AUTO ADMISORIO', 'AUTO DE VISTA', 'AUTO FINAL'];
-
-    public barChartData: ChartDataset<'bar'>[] = [
-      {
-        label: 'Total Documentos 2025',
-        data: [34, 43, 92, 12],
-        backgroundColor: 'rgba(220, 53, 69, 0.6)',
-        borderColor: '#b00600',
-        borderWidth: 1
-      }
-    ];
 
     constructor(
         private service: MessageService,
@@ -149,10 +172,13 @@ export class DocumentosComponent {
     onBuscar(): void {
         if (this.tipoReporte === 'DETALLADO') {
             this.buscarReporteDocGenerados();
+            this.buscado=true;
         } else if (this.tipoReporte === 'ACUMULADO') {
             this.buscarReporteAcumulado();
+            this.buscado=true;
         } else if (this.tipoReporte === 'GRAFICOS') {
             this.cargarGraficos();
+            this.buscado=true;
         }
     }
 
@@ -188,25 +214,102 @@ export class DocumentosComponent {
         this.loaderMessage = 'Generando reporte acumulado...';
         this.botonLoader = false;
 
-        this.documentoService.getTotalOperaciones(body).subscribe({
-            next: (res) => {
-                this.expedientes = Array.isArray(res) ? res : [res]; // en caso devuelva objeto único
-                this.totalRegistros = this.expedientes.length;
-                this.isTyping = false;
+    }
+
+  cargarGraficos(): void {
+    const datos: DataGraficos = {
+      instancia: "2° JUZGADO PAZ LETRADO - Sede Central",
+      juez: "MONTES MELENDEZ, PAUL JONATHAN",
+      especialidades: [
+        {
+          nombre: "FAMILIA CIVIL",
+          tiposDocumento: [
+            {
+              tipoDocumento: "AUTO",
+              documentos: [
+                { documento: "AUTO ADMISORIO", total: 4 },
+                { documento: "AUTO APELACION", total: 6 }
+              ]
             },
-            error: (err) => {
-                console.error('Error en reporte acumulado', err);
-                this.loaderMessage = 'Error al generar reporte acumulado.';
-                this.botonLoader = true;
+            {
+              tipoDocumento: "OFICIO",
+              documentos: [
+                { documento: "OFICIO NACION", total: 4 },
+                { documento: "OFICIO SUNAT", total: 6 }
+              ]
             }
+          ]
+        },
+        {
+          nombre: "CIVIL",
+          tiposDocumento: [
+            {
+              tipoDocumento: "RESOLUCION",
+              documentos: [
+                { documento: "RESOLUCION FINAL", total: 8 },
+                { documento: "RESOLUCION INTERLOCUTORIA", total: 3 }
+              ]
+            }
+          ]
+        },
+        {
+          nombre: "PENAL",
+          tiposDocumento: [
+            {
+              tipoDocumento: "SENTENCIA",
+              documentos: [
+                { documento: "SENTENCIA CONDENA", total: 10 },
+                { documento: "SENTENCIA ABSOLUTORIA", total: 2 }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+
+    // Transformar los datos en formato para el gráfico
+    this.graficosPorEspecialidad = datos.especialidades.map((especialidad) => {
+      const documentosUnificados: { [nombre: string]: number } = {};
+
+      // Agrupar documentos por nombre (independientemente del tipo)
+      especialidad.tiposDocumento.forEach(tipo => {
+        tipo.documentos.forEach(doc => {
+          if (!documentosUnificados[doc.documento]) {
+            documentosUnificados[doc.documento] = 0;
+          }
+          documentosUnificados[doc.documento] += doc.total;
         });
-    }
+      });
 
-    cargarGraficos(){
-      this.isTyping = false;
+      const labels = Object.keys(documentosUnificados);
+      const values = Object.values(documentosUnificados);
 
-    }
-    cerrarLoader() {
+      return {
+        nombre: especialidad.nombre,
+        labels: labels,
+        barData: [
+          {
+            label: 'Total Documentos 2025',
+            data: values,
+            backgroundColor: 'rgba(220, 53, 69, 0.6)',
+            borderColor: '#b00600',
+            borderWidth: 1
+          }
+        ],
+        lineData: [
+          {
+            label: 'Total Documentos 2025',
+            data: values,
+            borderColor: '#b00600',
+            fill: false,
+            tension: 0.3
+          }
+        ]
+      };
+    });
+  }
+
+  cerrarLoader() {
         this.botonLoader = false;
         this.isTyping = false;
         this.loaderMessage = '';

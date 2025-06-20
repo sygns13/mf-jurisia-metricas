@@ -35,8 +35,8 @@ export class DocumentoService {
         return this.http.post<any>(url, body);
     }
 
-    getTotalOperaciones(body: any): Observable<any> {
-        const url = `${baseUrl}/documento-generado-ia/gettotaloperaciones`;
+  getDocumentoGeneradoDataCant(body: any): Observable<any> {
+        const url = `${baseUrl}/documento-generado-ia/gettotaloperaciones-filters`;
         return this.http.post<any>(url, body);
     }
 

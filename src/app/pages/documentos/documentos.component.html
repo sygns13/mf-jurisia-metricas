@@ -76,86 +76,101 @@
 <div class="p-fluid box">
   <div class="p-field p-grid">
     <div class="results-table">
-      <p-table *ngIf="tipoReporte === 'DETALLADO'" [value]="expedientes" showGridlines [responsiveLayout]="'scroll'">
-        <ng-template pTemplate="header">
-          <tr>
-            <th>INSTANCIA</th>
-            <th>ESPECIALIDAD</th>
-            <th>MATERIA</th>
-            <th>TIPO DOCUMENTO</th>
-            <th>DOCUMENTO</th>
-            <th>UBICACIÓN</th>
-            <th>JUEZ</th>
-            <th>FECHA GENERADO</th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-expediente>
-          <tr>
-            <td>{{ expediente.instancia }}</td>
-            <td>{{ expediente.especialidad }}</td>
-            <td>{{ expediente.materia }}</td>
-            <td>{{ expediente.tipoDocumento }}</td>
-            <td>{{ expediente.documento }}</td>
-            <td>{{ expediente.ubicacion }}</td>
-            <td>{{ expediente.juez }}</td>
-            <td>{{ expediente.regDate }}</td>
-          </tr>
-        </ng-template>
-      </p-table>
-
-      <p-table *ngIf="tipoReporte === 'ACUMULADO'" [value]="expedientes" showGridlines [responsiveLayout]="'scroll'">
-        <ng-template pTemplate="header">
-          <tr>
-            <th>INSTANCIA</th>
-            <th>ESPECIALIDAD</th>
-            <th>MATERIA</th>
-            <th>TIPO DOCUMENTO</th>
-            <th>DOCUMENTO</th>
-            <th>JUEZ</th>
-            <th class="text-right">TOTAL</th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-item>
-          <tr>
-            <td>{{ item.instancia }}</td>
-            <td>{{ item.especialidad }}</td>
-            <td>{{ item.materia }}</td>
-            <td>{{ item.tipoDocumento }}</td>
-            <td>{{ item.documento }}</td>
-            <td>{{ item.juez }}</td>
-            <td class="text-right">{{ item.totalDocsGenerados }}</td>
-          </tr>
-        </ng-template>
-      </p-table>
-      <p-paginator
-        [rows]="tamanioPagina"
-        [totalRecords]="totalRegistros"
-        [rowsPerPageOptions]="[5, 10, 20, 50]"
-        (onPageChange)="onPaginar($event)">
-      </p-paginator>
-
+      <div class="results-table" *ngIf="tipoReporte === 'DETALLADO' && buscado">
+        <p-table *ngIf="tipoReporte === 'DETALLADO'" [value]="expedientes" showGridlines [responsiveLayout]="'scroll'">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>INSTANCIA</th>
+              <th>ESPECIALIDAD</th>
+              <th>MATERIA</th>
+              <th>TIPO DOCUMENTO</th>
+              <th>DOCUMENTO</th>
+              <th>UBICACIÓN</th>
+              <th>JUEZ</th>
+              <th>FECHA GENERADO</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-expediente>
+            <tr>
+              <td>{{ expediente.instancia }}</td>
+              <td>{{ expediente.especialidad }}</td>
+              <td>{{ expediente.materia }}</td>
+              <td>{{ expediente.tipoDocumento }}</td>
+              <td>{{ expediente.documento }}</td>
+              <td>{{ expediente.ubicacion }}</td>
+              <td>{{ expediente.juez }}</td>
+              <td>{{ expediente.regDate }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+        <p-paginator
+          [rows]="tamanioPagina"
+          [totalRecords]="totalRegistros"
+          [rowsPerPageOptions]="[5, 10, 20, 50]"
+          (onPageChange)="onPaginar($event)">
+        </p-paginator>
+      </div>
+      <div class="results-table" *ngIf="tipoReporte === 'ACUMULADO' && buscado">
+        <p-table [value]="expedientes" showGridlines [responsiveLayout]="'scroll'">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>INSTANCIA</th>
+              <th>ESPECIALIDAD</th>
+              <th>MATERIA</th>
+              <th>TIPO DOCUMENTO</th>
+              <th>DOCUMENTO</th>
+              <th>JUEZ</th>
+              <th class="text-right">TOTAL</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-item>
+            <tr>
+              <td>{{ item.instancia }}</td>
+              <td>{{ item.especialidad }}</td>
+              <td>{{ item.materia }}</td>
+              <td>{{ item.tipoDocumento }}</td>
+              <td>{{ item.documento }}</td>
+              <td>{{ item.juez }}</td>
+              <td class="text-right">{{ item.totalDocsGenerados }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+        <p-paginator
+          [rows]="tamanioPagina"
+          [totalRecords]="totalRegistros"
+          [rowsPerPageOptions]="[5, 10, 20, 50]"
+          (onPageChange)="onPaginar($event)">
+        </p-paginator>
+      </div>
       <!-- GRAFICOS -->
-      <div class="results-table" *ngIf="tipoReporte === 'GRAFICOS'">
-        <div style="display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center;">
-          <!-- Gráfico de barras horizontal -->
-          <div style="flex: 1 1 45%;">
-            <canvas baseChart
-                    [data]="{ labels: barChartLabels, datasets: barChartData }"
-                    [options]="barChartOptions"
-                    [type]="'bar'">
-            </canvas>
-          </div>
+      <div class="results-table" *ngIf="tipoReporte === 'GRAFICOS' && buscado">
+        <div *ngFor="let grafico of graficosPorEspecialidad" style="margin-bottom: 3rem;">
+          <h4 style="text-align: center;">{{ grafico.nombre }}</h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center;">
 
-          <!-- Gráfico de línea (para mostrar tendencia) -->
-          <div style="flex: 1 1 45%;">
-            <canvas baseChart
-                    [data]="{ labels: barChartLabels, datasets: barChartData }"
-                    [options]="{ responsive: true }"
-                    [type]="'line'">
-            </canvas>
+            <!-- Gráfico de barras -->
+            <div style="flex: 0 0 calc(40% - 16px)">
+              <canvas baseChart
+                      [data]="{ labels: grafico.labels, datasets: grafico.barData }"
+                      [options]="barChartOptions"
+                      [type]="'bar'">
+              </canvas>
+            </div>
+
+            <!-- Gráfico de líneas -->
+            <div style="flex: 0 0 calc(40% - 16px)">
+              <canvas baseChart
+                      [data]="{ labels: grafico.labels, datasets: grafico.lineData }"
+                      [options]="lineChartOptions"
+                      [type]="'line'">
+              </canvas>
+            </div>
+
           </div>
         </div>
       </div>
+
+
 
     </div>
   </div>
