@@ -1,175 +1,98 @@
 <p-toast />
-  <div class="container">
-    <p-fluid class="flex flex-col md:flex-row gap-8">
-      <div class="md:w-1/2">
-        <div class="card flex flex-col gap-4">
-          <h3>Reporte de Consultas y Uso de la IA</h3>
-          <div class="flex flex-row flex-wrap gap-2 m-2">
-            <button pButton
-                    label="Reporte Detallado"
-                    icon="pi pi-list"
-                    class="redbutton"
-                    (click)="tipoReporte = 'DETALLADO'; displayFiltros = true"
-                    [style]="{ width: 'auto' }">
-            </button>
-
-            <button pButton
-                    label="Reporte Acumulado"
-                    icon="pi pi-database"
-                    class="redbutton"
-                    (click)="tipoReporte = 'ACUMULADO'; displayFiltros = true"
-                    [style]="{ width: 'auto' }">
-            </button>
-
-            <button pButton
-                    label="Reporte Gráficos"
-                    icon="pi pi-chart-bar"
-                    class="redbutton"
-                    (click)="tipoReporte = 'GRAFICOS'; displayFiltros = true"
-                    [style]="{ width: 'auto' }">
-            </button>
-          </div>
-        </div>
-      </div>
-    </p-fluid>
-  </div>
-
-  <!--FILTROS-->
-  <p-dialog [(visible)]="displayFiltros"
-            [breakpoints]="{ '960px': '75vw' }"
-            [style]="{ width: '45vw' }"
-            [modal]="true"
-            [contentStyle]="{ 'overflow': 'visible' }">
-
-    <ng-template #header>
-      <div class="inline-flex items-center justify-center gap-2" style="color: white;">
-        <span class="font-bold whitespace-nowrap">FILTROS PARA GENERAR REPORTE</span>
-      </div>
-    </ng-template>
-
-    <div style="display: flex; flex-wrap: wrap; gap: 16px;">
-      <!-- Contenedor individual -->
-      <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-          <label for="sede">Sede</label>
-          <p-select id="sede" [(ngModel)]="sedeSeleccionada"
-                    [options]="sedes"
-                    optionLabel="sede"
-                    optionValue="codigoSede"
-                    placeholder="Seleccione Sede"
-                    (onChange)="onSedeChange($event)"
-                    [filter]="true" filterBy="sede">
-          </p-select>
-        </div>
-      </div>
-
-      <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-          <label for="instancia">Instancia</label>
-          <p-select id="instancia" [(ngModel)]="instanciaSeleccionada"
-                    [options]="instanciasFiltradas"
-                    optionLabel="instancia"
-                    optionValue="codigoInstancia"
-                    placeholder="Seleccione Instancia"
-                    (onChange)="onInstanciaChange($event)"
-                    [filter]="true" filterBy="instancia">
-          </p-select>
-        </div>
-      </div>
-
-      <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-          <label for="especialidad">Especialidad</label>
-          <p-select id="especialidad" [(ngModel)]="especialidadSeleccionada"
-                    [options]="especialidadesFiltradas"
-                    optionLabel="especialidad"
-                    optionValue="codigoEspecialidad"
-                    placeholder="Seleccione Especialidad"
-                    [filter]="true" filterBy="especialidad">
-          </p-select>
-        </div>
-      </div>
-      <div style="flex: 0 0 calc(25% - 16px); box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-          <label>Fecha Inicio</label>
-          <p-calendar [(ngModel)]="fechaInicio"
-                      dateFormat="dd/mm/yy"
-                      showIcon="true"
-                      [showButtonBar]="true"
-                      inputId="fechaInicio"
-                      [style]="{ width: '100%' }">
-          </p-calendar>
-
-        </div>
-      </div>
-      <div style="flex: 0 0 calc(25% - 16px); box-sizing: border-box;">
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-          <label>Fecha Fin</label>
-          <p-calendar [(ngModel)]="fechaFin"
-                      dateFormat="dd/mm/yy"
-                      showIcon="true"
-                      [showButtonBar]="true"
-                      inputId="fechaFin"
-                      [style]="{ width: '100%' }">
-          </p-calendar>
-        </div>
-      </div>
-
-
-    </div>
-    <ng-template #footer>
-      <div style="width: 100%;">
-        <hr style="width: 100%; border: none; border-top: 1px solid #ccc; margin-bottom: 1rem;margin-top: 0px!important;">
-        <div style="display: flex; justify-content: flex-end;">
+<div class="container">
+  <p-fluid class="flex flex-col md:flex-row gap-8">
+    <div class="md:w-1/2">
+      <div class="card flex flex-col gap-4">
+        <h3>Reporte de Consultas Realizadas a la IA</h3>
+        <div class="flex flex-row flex-wrap gap-2 m-2">
           <button pButton
-                  label="Buscar"
-                  icon="pi pi-search"
-                  (click)="onBuscar(); displayFiltros = false;"
+                  label="Reporte por Temas"
+                  icon="pi pi-list"
                   class="redbutton"
+                  (click)="tipoReporte = 'TEMAS'; displayFiltros = true"
+                  [style]="{ width: 'auto' }">
+          </button>
+
+          <button pButton
+                  label="Reporte Acumulado"
+                  icon="pi pi-database"
+                  class="redbutton"
+                  (click)="tipoReporte = 'ACUMULADO'; displayFiltros = true"
+                  [style]="{ width: 'auto' }">
+          </button>
+
+          <button pButton
+                  label="Reporte Gráficos"
+                  icon="pi pi-chart-bar"
+                  class="redbutton"
+                  (click)="tipoReporte = 'GRAFICOS'; displayFiltros = true"
                   [style]="{ width: 'auto' }">
           </button>
         </div>
       </div>
-    </ng-template>
-  </p-dialog>
+    </div>
+  </p-fluid>
+
+</div>
+
+
+<!--Loader ApuBot-->
+<p-dialog
+  [(visible)]="isTyping"
+  modal="true"
+  [closable]="false"
+  [dismissableMask]="true"
+  [draggable]="false"
+  class="dialog-typing"
+  [style]="{ width: '300px' }"
+>
+  <ng-template pTemplate="header">
+    <div class="dialog-header-centered">
+      <i class="pi pi-info-circle icon-alert" style="font-size: 1.2rem;color: #ffffff"></i>
+      <span class="title-text" style="font-size: 1.2rem;margin-left: 0.8rem;color: #ffffff;font-weight: bold">{{ loaderMessage }}</span>
+    </div>
+  </ng-template>
+
+  <div class="dialog-content">
+    <object
+      data="assets/animations/ApuBotTyping.svg"
+      type="image/svg+xml"
+      class="typing-animation">
+    </object>
+    <div class="boton-centrado">
+      <button *ngIf="botonLoader"
+              pButton
+              label="Aceptar"
+              class="redbutton"
+              style="margin-top: 1rem;"
+              (click)="cerrarLoader()">
+      </button>
+    </div>
+  </div>
+</p-dialog>
+<!--END LOADER-->
 
 <!--TABLA DE RESULTADOS-->
 <div class="p-fluid box">
   <div class="p-field p-grid">
     <div class="results-table">
-      <div class="results-table" *ngIf="tipoReporte === 'DETALLADO' && buscado">
-        <p-table *ngIf="tipoReporte === 'DETALLADO'" [value]="expedientes" showGridlines [responsiveLayout]="'scroll'">
+      <div class="results-table" *ngIf="tipoReporte === 'TEMAS' && buscado">
+        <p-table [value]="expedientesTemas" showGridlines [responsiveLayout]="'scroll'">
           <ng-template pTemplate="header">
             <tr>
               <th>INSTANCIA</th>
               <th>ESPECIALIDAD</th>
-              <th>MATERIA</th>
-              <th>TIPO DOCUMENTO</th>
-              <th>DOCUMENTO</th>
-              <th>UBICACIÓN</th>
-              <th>JUEZ</th>
-              <th>FECHA GENERADO</th>
+              <th class="text-right">CONSULTAS</th>
             </tr>
           </ng-template>
-          <ng-template pTemplate="body" let-expediente>
+          <ng-template pTemplate="body" let-item>
             <tr>
-              <td>{{ expediente.instancia }}</td>
-              <td>{{ expediente.especialidad }}</td>
-              <td>{{ expediente.materia }}</td>
-              <td>{{ expediente.tipoDocumento }}</td>
-              <td>{{ expediente.documento }}</td>
-              <td>{{ expediente.ubicacion }}</td>
-              <td>{{ expediente.juez }}</td>
-              <td>{{ expediente.regDate }}</td>
+              <td>{{ item.instancia }}</td>
+              <td>{{ item.especialidad }}</td>
+              <td class="text-right">{{ item.consultas }}</td>
             </tr>
           </ng-template>
         </p-table>
-        <p-paginator
-          [rows]="tamanioPagina"
-          [totalRecords]="totalRegistros"
-          [rowsPerPageOptions]="[5, 10, 20, 50]"
-          (onPageChange)="onPaginar($event)">
-        </p-paginator>
       </div>
       <div class="results-table" *ngIf="tipoReporte === 'ACUMULADO' && buscado">
         <p-table [value]="expedientes" showGridlines [responsiveLayout]="'scroll'">
@@ -196,12 +119,6 @@
             </tr>
           </ng-template>
         </p-table>
-        <p-paginator
-          [rows]="tamanioPagina"
-          [totalRecords]="totalRegistros"
-          [rowsPerPageOptions]="[5, 10, 20, 50]"
-          (onPageChange)="onPaginar($event)">
-        </p-paginator>
       </div>
       <!-- GRAFICOS -->
       <div class="results-table" *ngIf="tipoReporte === 'GRAFICOS' && buscado">
@@ -239,3 +156,103 @@
 <!--TABLA DE RESULTADOS-->
 
 
+<!--FILTROS-->
+<!-- LISTAR EXPEDIENTES -->
+<p-dialog [(visible)]="displayFiltros"
+          [breakpoints]="{ '960px': '75vw' }"
+          [style]="{ width: '45vw' }"
+          [modal]="true"
+          [contentStyle]="{ 'overflow': 'visible' }">
+
+  <ng-template #header>
+    <div class="inline-flex items-center justify-center gap-2" style="color: white;">
+      <span class="font-bold whitespace-nowrap">FILTROS PARA GENERAR REPORTE</span>
+    </div>
+  </ng-template>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+    <!-- Contenedor individual -->
+    <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label for="sede">Sede</label>
+        <p-select id="sede" [(ngModel)]="sedeSeleccionada"
+                  [options]="sedes"
+                  optionLabel="sede"
+                  optionValue="codigoSede"
+                  placeholder="Seleccione Sede"
+                  (onChange)="onSedeChange($event)"
+                  [filter]="true" filterBy="sede">
+        </p-select>
+      </div>
+    </div>
+
+    <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label for="instancia">Instancia</label>
+        <p-select id="instancia" [(ngModel)]="instanciaSeleccionada"
+                  [options]="instanciasFiltradas"
+                  optionLabel="instancia"
+                  optionValue="codigoInstancia"
+                  placeholder="Seleccione Instancia"
+                  (onChange)="onInstanciaChange($event)"
+                  [filter]="true" filterBy="instancia">
+        </p-select>
+      </div>
+    </div>
+
+    <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label for="especialidad">Especialidad</label>
+        <p-select id="especialidad" [(ngModel)]="especialidadSeleccionada"
+                  [options]="especialidadesFiltradas"
+                  optionLabel="especialidad"
+                  optionValue="codigoEspecialidad"
+                  placeholder="Seleccione Especialidad"
+                  [filter]="true" filterBy="especialidad">
+        </p-select>
+      </div>
+    </div>
+    <div style="flex: 0 0 calc(25% - 16px); box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label for="documento">Fecha Inicio</label>
+        <p-calendar [(ngModel)]="fechaInicio"
+                    dateFormat="dd/mm/yy"
+                    showIcon="true"
+                    [showButtonBar]="true"
+                    inputId="fechaInicio"
+                    [style]="{ width: '100%' }">
+        </p-calendar>
+
+      </div>
+    </div>
+    <div style="flex: 0 0 calc(25% - 16px); box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label for="documento">Fecha Fin</label>
+        <p-calendar [(ngModel)]="fechaFin"
+                    dateFormat="dd/mm/yy"
+                    showIcon="true"
+                    [showButtonBar]="true"
+                    inputId="fechaFin"
+                    [style]="{ width: '100%' }">
+        </p-calendar>
+      </div>
+    </div>
+
+
+  </div>
+  <ng-template #footer>
+    <div style="width: 100%;">
+      <hr style="width: 100%; border: none; border-top: 1px solid #ccc; margin-bottom: 1rem;margin-top: 0px!important;">
+      <div style="display: flex; justify-content: flex-end;">
+        <button pButton
+                label="Buscar"
+                icon="pi pi-search"
+                (click)="onBuscar(); displayFiltros = false;"
+                class="redbutton"
+                [style]="{ width: 'auto' }">
+        </button>
+      </div>
+    </div>
+  </ng-template>
+</p-dialog>
+<!--FILTROS-->

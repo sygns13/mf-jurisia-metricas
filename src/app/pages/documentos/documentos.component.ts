@@ -60,6 +60,14 @@ interface GraficoPorEspecialidad {
   barData: ChartDataset<'bar'>[];
   lineData: ChartDataset<'line'>[];
 }
+interface FilaAcumulado {
+    instancia: string;
+    especialidad: string;
+    tipoDocumento: string;
+    documento: string;
+    juez: string;
+    totalDocsGenerados: number;
+}
 
 
 @Component({
@@ -146,6 +154,7 @@ export class DocumentosComponent {
     tipoDocumentos: TipoDocumento[] = [];
     documentosFiltrados: Documento[] = [];
     documentos: Documento[] = [];
+    expedientesAcumulado: FilaAcumulado[] = [];
 
     constructor(
         private service: MessageService,
@@ -184,132 +193,123 @@ export class DocumentosComponent {
 
     buscarReporteAcumulado(): void {
         const body = {
-            idUser: null,
-            documento: "",
-            apellidos: "",
-            nombres: "",
-            cargo: "",
-            username: "",
-            email: "",
-            typedoc: "",
-            codSede: this.sedeSeleccionada || "",
             codInstancia: this.instanciaSeleccionada && this.instanciaSeleccionada !== '0' ? this.instanciaSeleccionada : "",
-            codEspecialidad: this.especialidadSeleccionada && this.especialidadSeleccionada !== '0' ? this.especialidadSeleccionada : "",
-            codMateria: "",
-            numeroExpediente: "",
-            yearExpediente: "",
-            idDocumento: this.documentoSeleccionado && this.documentoSeleccionado !== 0 ? this.documentoSeleccionado : "",
-            idTipoDocumento: this.tipoDocumentoSeleccionado && this.tipoDocumentoSeleccionado !== 0 ? this.tipoDocumentoSeleccionado : "",
-            nUnico: "",
-            xFormato: "",
-            dniDemandante: "",
-            dniDemandado: "",
-            templateCode: "",
-            templateID: 1,
+            juez: "",
             fechaInicio: this.fechaInicio ? this.fechaInicio.toISOString().slice(0, 10) : "",
             fechaFin: this.fechaFin ? this.fechaFin.toISOString().slice(0, 10) : "",
+            codEspecialidad: this.especialidadSeleccionada && this.especialidadSeleccionada !== '0' ? this.especialidadSeleccionada : "",
+            idTipoDocumento: this.tipoDocumentoSeleccionado && this.tipoDocumentoSeleccionado !== 0 ? this.tipoDocumentoSeleccionado : "",
+            idDocumento: this.documentoSeleccionado && this.documentoSeleccionado !== 0 ? this.documentoSeleccionado : "",
         };
 
         this.isTyping = true;
         this.loaderMessage = 'Generando reporte acumulado...';
         this.botonLoader = false;
 
+        this.documentoService.getDocumentoGeneradoAcumulado(body).subscribe({
+            next: (res) => {
+                const filas: FilaAcumulado[] = [];
+
+                const instancia = res.instancia || '';
+                const juez = res.juez || '';
+
+                (res.especialidades || []).forEach((esp: any) => {
+                    const especialidad = esp.especialidad || '';
+
+                    (esp.tipoDocumentos || []).forEach((tipo: any) => {
+                        const tipoDocumento = tipo.tipoDocumento || '';
+
+                        (tipo.documentos || []).forEach((doc: any) => {
+                            filas.push({
+                                instancia: instancia,
+                                especialidad: especialidad,
+                                tipoDocumento: tipoDocumento,
+                                documento: doc.documento || '',
+                                juez: juez,
+                                totalDocsGenerados: doc.totalDoc || 0
+                            });
+                        });
+                    });
+                });
+
+                this.expedientesAcumulado  = filas;
+                this.totalRegistros = filas.length;
+                this.buscado = true;
+                this.isTyping = false;
+            },
+            error: (err) => {
+                console.error('Error al buscar documentos generados', err);
+                this.loaderMessage = 'Error al generar el reporte.';
+                this.botonLoader = true;
+            }
+        });
     }
 
   cargarGraficos(): void {
-    const datos: DataGraficos = {
-      instancia: "2° JUZGADO PAZ LETRADO - Sede Central",
-      juez: "MONTES MELENDEZ, PAUL JONATHAN",
-      especialidades: [
-        {
-          nombre: "FAMILIA CIVIL",
-          tiposDocumento: [
-            {
-              tipoDocumento: "AUTO",
-              documentos: [
-                { documento: "AUTO ADMISORIO", total: 4 },
-                { documento: "AUTO APELACION", total: 6 }
-              ]
-            },
-            {
-              tipoDocumento: "OFICIO",
-              documentos: [
-                { documento: "OFICIO NACION", total: 4 },
-                { documento: "OFICIO SUNAT", total: 6 }
-              ]
-            }
-          ]
-        },
-        {
-          nombre: "CIVIL",
-          tiposDocumento: [
-            {
-              tipoDocumento: "RESOLUCION",
-              documentos: [
-                { documento: "RESOLUCION FINAL", total: 8 },
-                { documento: "RESOLUCION INTERLOCUTORIA", total: 3 }
-              ]
-            }
-          ]
-        },
-        {
-          nombre: "PENAL",
-          tiposDocumento: [
-            {
-              tipoDocumento: "SENTENCIA",
-              documentos: [
-                { documento: "SENTENCIA CONDENA", total: 10 },
-                { documento: "SENTENCIA ABSOLUTORIA", total: 2 }
-              ]
-            }
-          ]
-        }
-      ]
-    };
-
-    // Transformar los datos en formato para el gráfico
-    this.graficosPorEspecialidad = datos.especialidades.map((especialidad) => {
-      const documentosUnificados: { [nombre: string]: number } = {};
-
-      // Agrupar documentos por nombre (independientemente del tipo)
-      especialidad.tiposDocumento.forEach(tipo => {
-        tipo.documentos.forEach(doc => {
-          if (!documentosUnificados[doc.documento]) {
-            documentosUnificados[doc.documento] = 0;
-          }
-          documentosUnificados[doc.documento] += doc.total;
-        });
-      });
-
-      const labels = Object.keys(documentosUnificados);
-      const values = Object.values(documentosUnificados);
-
-      return {
-        nombre: especialidad.nombre,
-        labels: labels,
-        barData: [
-          {
-            label: 'Total Documentos 2025',
-            data: values,
-            backgroundColor: 'rgba(220, 53, 69, 0.6)',
-            borderColor: '#b00600',
-            borderWidth: 1
-          }
-        ],
-        lineData: [
-          {
-            label: 'Total Documentos 2025',
-            data: values,
-            borderColor: '#b00600',
-            fill: false,
-            tension: 0.3
-          }
-        ]
+      const body = {
+          codInstancia: this.instanciaSeleccionada && this.instanciaSeleccionada !== '0' ? this.instanciaSeleccionada : "",
+          juez: "",
+          fechaInicio: this.fechaInicio ? this.fechaInicio.toISOString().slice(0, 10) : "",
+          fechaFin: this.fechaFin ? this.fechaFin.toISOString().slice(0, 10) : "",
+          codEspecialidad: this.especialidadSeleccionada && this.especialidadSeleccionada !== '0' ? this.especialidadSeleccionada : "",
+          idTipoDocumento: this.tipoDocumentoSeleccionado && this.tipoDocumentoSeleccionado !== 0 ? this.tipoDocumentoSeleccionado : "",
+          idDocumento: this.documentoSeleccionado && this.documentoSeleccionado !== 0 ? this.documentoSeleccionado : "",
       };
-    });
+
+      this.isTyping = true;
+      this.loaderMessage = 'Generando reporte...';
+      this.botonLoader = false;
+
+      this.documentoService.getDocumentoGeneradoAcumulado(body).subscribe({
+          next: (res) => {
+              const especialidades = res?.especialidades || [];
+
+              this.graficosPorEspecialidad = especialidades.map((esp: any) => {
+                  const documentosUnificados: { [docNombre: string]: number } = {};
+
+                  esp.tipoDocumentos?.forEach((tipoDoc: any) => {
+                      tipoDoc.documentos?.forEach((doc: any) => {
+                          if (!documentosUnificados[doc.documento]) {
+                              documentosUnificados[doc.documento] = 0;
+                          }
+                          documentosUnificados[doc.documento] += doc.totalDoc || 0;
+                      });
+                  });
+
+                  const labels = Object.keys(documentosUnificados);
+                  const values = Object.values(documentosUnificados);
+
+                  return {
+                      nombre: esp.especialidad,
+                      labels: labels,
+                      barData: [{
+                          label: 'Total Documentos',
+                          data: values,
+                          backgroundColor: 'rgba(220, 53, 69, 0.6)',
+                          borderColor: '#b00600',
+                          borderWidth: 1
+                      }],
+                      lineData: [{
+                          label: 'Total Documentos',
+                          data: values,
+                          borderColor: '#b00600',
+                          fill: false,
+                          tension: 0.3
+                      }]
+                  };
+              });
+
+              this.isTyping =  false;
+          },
+          error: (err) => {
+              console.error('Error al generar gráfico', err);
+              this.loaderMessage = 'Error al generar el gráfico.';
+              this.botonLoader = true;
+          }
+      });
   }
 
-  cerrarLoader() {
+    cerrarLoader() {
         this.botonLoader = false;
         this.isTyping = false;
         this.loaderMessage = '';

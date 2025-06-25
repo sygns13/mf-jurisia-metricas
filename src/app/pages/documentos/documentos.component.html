@@ -111,7 +111,7 @@
         </p-paginator>
       </div>
       <div class="results-table" *ngIf="tipoReporte === 'ACUMULADO' && buscado">
-        <p-table [value]="expedientes" showGridlines [responsiveLayout]="'scroll'">
+        <p-table [value]="expedientesAcumulado" showGridlines [responsiveLayout]="'scroll'">
           <ng-template pTemplate="header">
             <tr>
               <th>INSTANCIA</th>

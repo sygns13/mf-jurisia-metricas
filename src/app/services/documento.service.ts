@@ -30,15 +30,19 @@ export class DocumentoService {
     return this.http.get(url, { responseType: 'blob' });
   }
 
-    getDocumentoGeneradoDataPaginated(body: any, page: number = 0, size: number = 10): Observable<any> {
+  getDocumentoGeneradoDataPaginated(body: any, page: number = 0, size: number = 10): Observable<any> {
         const url = `${baseUrl}/documento-generado-ia/get-data?page=${page}&size=${size}`;
         return this.http.post<any>(url, body);
-    }
+  }
 
-  getDocumentoGeneradoDataCant(body: any): Observable<any> {
-        const url = `${baseUrl}/documento-generado-ia/gettotaloperaciones-filters`;
+  getDocumentoGeneradoAcumulado(body: any): Observable<any> {
+        const url = `${baseUrl}/documento-generado-ia/main`;
         return this.http.post<any>(url, body);
-    }
+  }
+  getConsultaIaTemas(body: any): Observable<any> {
+        const url = `${baseUrl}/consulta-ia/temas`;
+        return this.http.post<any>(url, body);
+  }
 
 
 
