@@ -6,28 +6,34 @@
         <h3>Reporte de Consultas Realizadas a la IA</h3>
         <div class="flex flex-row flex-wrap gap-2 m-2">
           <button pButton
+                  label="Reporte Mis Consultas"
+                  icon="pi pi-list"
+                  class="redbutton"
+                  (click)="tipoReporte = 'MISCONSULTAS'; displayFiltros = true; buscado=false;"
+                  [style]="{ width: 'auto' }">
+          </button>
+          <button pButton
                   label="Reporte por Temas"
                   icon="pi pi-list"
                   class="redbutton"
-                  (click)="tipoReporte = 'TEMAS'; displayFiltros = true"
+                  (click)="tipoReporte = 'TEMAS'; displayFiltros = true; buscado=false;"
                   [style]="{ width: 'auto' }">
           </button>
-
           <button pButton
-                  label="Reporte Acumulado"
+                  label="Reporte por Usuarios"
                   icon="pi pi-database"
                   class="redbutton"
-                  (click)="tipoReporte = 'ACUMULADO'; displayFiltros = true"
+                  (click)="tipoReporte = 'USUARIOS'; displayFiltros = true; buscado=false;"
+                  [style]="{ width: 'auto' }">
+          </button>
+          <button pButton
+                  label="Exportar PDF"
+                  icon="pi pi-file-pdf"
+                  class="redbutton"
+                  (click)="exportarPDF()" 
                   [style]="{ width: 'auto' }">
           </button>
 
-          <button pButton
-                  label="Reporte Gráficos"
-                  icon="pi pi-chart-bar"
-                  class="redbutton"
-                  (click)="tipoReporte = 'GRAFICOS'; displayFiltros = true"
-                  [style]="{ width: 'auto' }">
-          </button>
         </div>
       </div>
     </div>
@@ -53,34 +59,158 @@
     </div>
   </ng-template>
 
-  <div class="dialog-content">
+  <div class="dialog-content" *ngIf="!loaderMessageBody" style="display: flex; justify-content: center; padding: 1rem;">
     <object
       data="assets/animations/ApuBotTyping.svg"
       type="image/svg+xml"
-      class="typing-animation">
+      class="typing-animation"
+      style="width: 120px; height: 120px;">
     </object>
-    <div class="boton-centrado">
-      <button *ngIf="botonLoader"
-              pButton
-              label="Aceptar"
-              class="redbutton"
-              style="margin-top: 1rem;"
-              (click)="cerrarLoader()">
-      </button>
+  </div>
+
+  <div class="dialog-content" *ngIf="loaderMessageBody" style="display: flex; align-items: center; gap: 1rem;">
+    <!-- Robot SVG -->
+    <object
+      data="assets/animations/ApuBotTyping.svg"
+      type="image/svg+xml"
+      class="typing-animation"
+      style="width: 80px; height: 80px; flex-shrink: 0;">
+    </object>
+  
+    <!-- Texto del mensaje -->
+    <div style="flex: 1;">
+      <div [innerHTML]="loaderMessageBody" style="font-size: 1.04rem"></div>
     </div>
+  </div>
+  <div class="boton-centrado">
+    <button *ngIf="botonLoader"
+            pButton
+            label="Aceptar"
+            class="redbutton"
+            style="margin-top: 1rem;"
+            (click)="cerrarLoader()">
+    </button>
   </div>
 </p-dialog>
 <!--END LOADER-->
+
+<p-dialog header="Detalle de la Conversación" [(visible)]="displayDialogDetalles" [modal]="true" [style]="{width: '70vw'}" [closable]="true" [contentStyle]="{'max-height': '70vh', 'overflow': 'auto'}" styleClass="custom-dialog">
+  <div class="chat-container">
+    <div *ngFor="let detalle of detallesConversacion">
+      <div class="message user">
+        <span class="label">👤 Usuario:</span>
+        <p>{{ detalle.sendMessage }}</p>
+      </div>
+      <div class="message ia">
+        <span class="label">🤖 APUBOT:</span>
+        <div [innerHTML]="parseMarkdown(detalle.responseMessage)"></div>
+      </div>
+    </div>
+  </div>
+</p-dialog>
+
+
 
 <!--TABLA DE RESULTADOS-->
 <div class="p-fluid box">
   <div class="p-field p-grid">
     <div class="results-table">
-      <div class="results-table" *ngIf="tipoReporte === 'TEMAS' && buscado">
-        <p-table [value]="expedientesTemas" showGridlines [responsiveLayout]="'scroll'">
+      <div id="contenedorPdfMisConsultas" class="contenedor-pdf-export">
+        <div class="results-table" *ngIf="tipoReporte === 'MISCONSULTAS' && buscado">
+          <p-table [value]="expedientesMisConsultas" showGridlines [responsiveLayout]="'scroll'">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>MODELO</th>
+                <th>CONSULTAS</th>
+                <th>FECHA REGISTRO</th>
+                <th>PRIMER MENSAJE</th>
+                <th>PRIMERA RESPUESTA</th>
+                <th>ACCIONES</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-item>
+              <tr>
+                <td>{{ item.model }}</td>
+                <td class="text-right">{{ item.countMessages }}</td>
+                <td>{{ item.regDate }}</td>
+                <td>{{ item.firstSendMessage }}</td>
+                <td>{{ item.firstResponseMessage | slice:0:70 }}{{ item.firstResponseMessage.length > 70 ? '...' : '' }}</td>
+                <td>
+                  <button pButton type="button" icon="pi pi-eye" label="Detalles"
+                          class="p-button-sm p-button-info"
+                          (click)="verDetalles(item.sessionUID)">
+                  </button>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        
+          <p-paginator
+            [rows]="10"
+            [totalRecords]="totalRegistros"
+            [rowsPerPageOptions]="[5, 10, 20]"
+            (onPageChange)="onPaginar($event)">
+          </p-paginator>
+        </div>
+      </div>
+      <!-- Tabla -->
+      <div id="contenedorPdfTemas" class="contenedor-pdf-export">
+        <div class="results-table" *ngIf="tipoReporte === 'TEMAS' && buscado">
+          <p-table [value]="expedientesTemas" showGridlines [responsiveLayout]="'scroll'">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>INSTANCIA</th>
+                <th>ESPECIALIDAD</th>
+                <th class="text-right">CONSULTAS</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-item>
+              <tr>
+                <td>{{ item.instancia }}</td>
+                <td>{{ item.especialidad }}</td>
+                <td class="text-right">{{ item.consultas }}</td>
+              </tr>
+            </ng-template>
+          </p-table>
+          <!-- GRAFICOS DE TEMAS -->
+          <div class="graphicsThemes" *ngIf="tipoReporte === 'TEMAS' && buscado && graficosPorEspecialidad.length">
+            <div *ngFor="let graf of graficosPorEspecialidad" style="margin-top: 3rem;margin-bottom: 3rem;">
+              <h4 style="text-align: center;">{{ graf.nombre }}</h4>
+              <div style="display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center;">
+
+                <!-- Gráfico de barras -->
+                <div style="flex: 0 0 calc(40% - 16px)">
+                  <canvas baseChart
+                          [data]="{ labels: graf.labels, datasets: graf.barData }"
+                          [options]="barChartOptions"
+                          [type]="'bar'">
+                  </canvas>
+                </div>
+
+                <!-- Gráfico de líneas -->
+                <div style="flex: 0 0 calc(40% - 16px)">
+                  <canvas baseChart
+                          [data]="{ labels: graf.labels, datasets: graf.lineData }"
+                          [options]="lineChartOptions"
+                          [type]="'line'">
+                  </canvas>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="contenedorPdfUsuarios" class="contenedor-pdf-export">
+        <div class="results-table" *ngIf="tipoReporte === 'USUARIOS' && buscado">
+        <p-table [value]="expedientesUsuarios" showGridlines [responsiveLayout]="'scroll'">
           <ng-template pTemplate="header">
             <tr>
               <th>INSTANCIA</th>
+              <th>NOMBRES</th>
+              <th>APELLIDOS</th>
+              <th>CARGO</th>
+              <th>USUARIO</th>
               <th>ESPECIALIDAD</th>
               <th class="text-right">CONSULTAS</th>
             </tr>
@@ -88,67 +218,43 @@
           <ng-template pTemplate="body" let-item>
             <tr>
               <td>{{ item.instancia }}</td>
+              <td>{{ item.nombres }}</td>
+              <td>{{ item.apellidos }}</td>
+              <td>{{ item.cargoUsuario }}</td>
+              <td>{{ item.username }}</td>
               <td>{{ item.especialidad }}</td>
               <td class="text-right">{{ item.consultas }}</td>
             </tr>
-          </ng-template>
+          </ng-template>        
         </p-table>
-      </div>
-      <div class="results-table" *ngIf="tipoReporte === 'ACUMULADO' && buscado">
-        <p-table [value]="expedientes" showGridlines [responsiveLayout]="'scroll'">
-          <ng-template pTemplate="header">
-            <tr>
-              <th>INSTANCIA</th>
-              <th>ESPECIALIDAD</th>
-              <th>MATERIA</th>
-              <th>TIPO DOCUMENTO</th>
-              <th>DOCUMENTO</th>
-              <th>JUEZ</th>
-              <th class="text-right">TOTAL</th>
-            </tr>
-          </ng-template>
-          <ng-template pTemplate="body" let-item>
-            <tr>
-              <td>{{ item.instancia }}</td>
-              <td>{{ item.especialidad }}</td>
-              <td>{{ item.materia }}</td>
-              <td>{{ item.tipoDocumento }}</td>
-              <td>{{ item.documento }}</td>
-              <td>{{ item.juez }}</td>
-              <td class="text-right">{{ item.totalDocsGenerados }}</td>
-            </tr>
-          </ng-template>
-        </p-table>
-      </div>
-      <!-- GRAFICOS -->
-      <div class="results-table" *ngIf="tipoReporte === 'GRAFICOS' && buscado">
-        <div *ngFor="let grafico of graficosPorEspecialidad" style="margin-bottom: 3rem;">
-          <h4 style="text-align: center;">{{ grafico.nombre }}</h4>
-          <div style="display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center;">
+        <!-- GRAFICOS DE USUARIOS -->
+        <div *ngIf="graficosPorEspecialidad.length">
+          <div *ngFor="let graf of graficosPorEspecialidad" style="margin-top: 3rem;margin-bottom: 3rem;">
+            <h4 style="text-align: center;">{{ graf.nombre }}</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center;">
 
-            <!-- Gráfico de barras -->
-            <div style="flex: 0 0 calc(40% - 16px)">
-              <canvas baseChart
-                      [data]="{ labels: grafico.labels, datasets: grafico.barData }"
-                      [options]="barChartOptions"
-                      [type]="'bar'">
-              </canvas>
+              <!-- Gráfico de barras -->
+              <div style="flex: 0 0 calc(40% - 16px)">
+                <canvas baseChart
+                        [data]="{ labels: graf.labels, datasets: graf.barData }"
+                        [options]="barChartOptions"
+                        [type]="'bar'">
+                </canvas>
+              </div>
+
+              <!-- Gráfico de líneas -->
+              <div style="flex: 0 0 calc(40% - 16px)">
+                <canvas baseChart
+                        [data]="{ labels: graf.labels, datasets: graf.lineData }"
+                        [options]="lineChartOptions"
+                        [type]="'line'">
+                </canvas>
+              </div>
             </div>
-
-            <!-- Gráfico de líneas -->
-            <div style="flex: 0 0 calc(40% - 16px)">
-              <canvas baseChart
-                      [data]="{ labels: grafico.labels, datasets: grafico.lineData }"
-                      [options]="lineChartOptions"
-                      [type]="'line'">
-              </canvas>
-            </div>
-
           </div>
         </div>
       </div>
-
-
+    </div>
 
     </div>
   </div>
@@ -186,7 +292,7 @@
       </div>
     </div>
 
-    <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;">
+    <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;" *ngIf="tipoReporte != 'MISCONSULTAS'">
       <div style="display: flex; flex-direction: column; gap: 4px;">
         <label for="instancia">Instancia</label>
         <p-select id="instancia" [(ngModel)]="instanciaSeleccionada"
@@ -200,7 +306,7 @@
       </div>
     </div>
 
-    <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;">
+    <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;" *ngIf="tipoReporte != 'MISCONSULTAS'">
       <div style="display: flex; flex-direction: column; gap: 4px;">
         <label for="especialidad">Especialidad</label>
         <p-select id="especialidad" [(ngModel)]="especialidadSeleccionada"
@@ -247,7 +353,7 @@
         <button pButton
                 label="Buscar"
                 icon="pi pi-search"
-                (click)="onBuscar(); displayFiltros = false;"
+                (click)="onBuscar();"
                 class="redbutton"
                 [style]="{ width: 'auto' }">
         </button>

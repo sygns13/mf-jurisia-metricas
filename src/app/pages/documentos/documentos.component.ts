@@ -11,7 +11,8 @@ import { FormsModule } from '@angular/forms';
 import { TextareaModule } from 'primeng/textarea';
 import {Select, SelectModule} from 'primeng/select';
 import { TableModule } from 'primeng/table';
-
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { MessageService, ToastMessageOptions } from 'primeng/api';
 import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
@@ -106,6 +107,7 @@ export class DocumentosComponent {
     displayFiltros: boolean = false;
     isTyping: boolean = false;
     loaderMessage: string = '';
+    loaderMessageBody: string = '';
     botonLoader: boolean = false;
     expedientes: Expediente[] = [];
     displayFiltroExpedientes: boolean = false;
@@ -118,6 +120,7 @@ export class DocumentosComponent {
     documentoSeleccionado: number | null = null;
     fechaInicio: Date  | null = null;
     fechaFin: Date  | null = null;
+    documentoDisabled: boolean = false;
 
     totalRegistros: number = 0;
     paginaActual: number = 0;
@@ -178,16 +181,55 @@ export class DocumentosComponent {
         this.loadDocumentos();
     }
 
+    validarFiltros(): boolean {
+        const camposFaltantes: string[] = [];
+      
+        if (!this.instanciaSeleccionada && this.instanciaSeleccionada !== '0') {
+          camposFaltantes.push('Instancia');
+        }
+      
+        if (!this.especialidadSeleccionada && this.especialidadSeleccionada !== '0') {
+          camposFaltantes.push('Especialidad');
+        }
+      
+        if (!this.tipoDocumentoSeleccionado && this.tipoDocumentoSeleccionado !== 0) {
+          camposFaltantes.push('Tipo de Documento');
+        }
+      
+        if (!this.documentoSeleccionado && this.documentoSeleccionado !== 0) {
+          camposFaltantes.push('Documento');
+        }
+      
+        if (camposFaltantes.length > 0) {
+            this.isTyping = true;
+            this.loaderMessage = 'Filtros Obligatorios';
+            this.loaderMessageBody = 'Por favor seleccione:<br> <b>' + camposFaltantes.join(', ')+'</b>';
+            this.botonLoader = true;
+            return false;
+        }
+      
+        return true;
+      }
+      
+
     onBuscar(): void {
-        if (this.tipoReporte === 'DETALLADO') {
-            this.buscarReporteDocGenerados();
-            this.buscado=true;
-        } else if (this.tipoReporte === 'ACUMULADO') {
-            this.buscarReporteAcumulado();
-            this.buscado=true;
-        } else if (this.tipoReporte === 'GRAFICOS') {
-            this.cargarGraficos();
-            this.buscado=true;
+        if (this.validarFiltros()) {
+            this.loaderMessageBody = '';
+            if (this.tipoReporte === 'DETALLADO') {
+                this.buscarReporteDocGenerados();
+                this.buscado=true;
+                this.displayFiltros = false;
+            } else if (this.tipoReporte === 'ACUMULADO') {
+                this.buscarReporteAcumulado();
+                this.buscado=true;
+                this.displayFiltros = false;
+            } else if (this.tipoReporte === 'GRAFICOS') {
+                this.cargarGraficos();
+                this.buscado=true;
+                this.displayFiltros = false;
+            }
+        }else{
+            this.displayFiltros = true;
         }
     }
 
@@ -424,8 +466,13 @@ export class DocumentosComponent {
               },
               ...filtrados
           ];
+          this.documentoDisabled = filtrados.length === 0;
+          if (this.documentoDisabled) {
+            this.documentoSeleccionado = 0;
+          }
       } else {
         this.documentosFiltrados = [];
+        this.documentoDisabled = true;
       }
     }
     loadDocumentos() {
@@ -490,6 +537,86 @@ export class DocumentosComponent {
         this.buscarReporteDocGenerados(this.paginaActual);
     }
 
+    exportarPDF(): void {
 
+        if (!this.buscado) {
+            this.isTyping = true;
+            this.loaderMessage = 'Alerta!';
+            this.loaderMessageBody = 'Debe generar un reporte antes de exportar';
+            this.botonLoader = true;
+            return;
+        }
+
+        const config = {
+          'DETALLADO': {
+            idContenedor: 'contenedorPdfDetallado',
+            titulo: 'REPORTE DE DOCUMENTOS GENERADOS - DETALLADO',
+            nombreArchivo: 'Reporte-documentos-detallado.pdf'
+          },
+          'ACUMULADO': {
+            idContenedor: 'contenedorPdfAcumulado',
+            titulo: 'REPORTE DE DOCUMENTOS GENERADOS - ACUMULADO',
+            nombreArchivo: 'Reporte-documentos-acumulado.pdf'
+          },
+          'GRAFICOS': {
+            idContenedor: 'contenedorPdfGraficos',
+            titulo: 'REPORTE DE DOCUMENTOS GENERADOS - GRÁFICOS',
+            nombreArchivo: 'Reporte-documentos-graficos.pdf'
+          }
+        };
+      
+        if (!this.tipoReporte || !(this.tipoReporte in config)) return;
+
+        const currentConfig = config[this.tipoReporte as 'DETALLADO' | 'ACUMULADO' | 'GRAFICOS'];
+
+        const dataElement = document.getElementById(currentConfig.idContenedor);
+        if (!dataElement) return;
+      
+        html2canvas(dataElement, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          useCORS: true
+        }).then(canvas => {
+          const imgData = canvas.toDataURL('image/png');
+          const pdf = new jsPDF('p', 'mm', 'a4');
+      
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const paddingX = 15;
+          const imgWidth = pageWidth - paddingX * 2;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+          const centerX = pageWidth / 2;
+          let cursorY = 15;
+      
+          const logoUrl = 'assets/img/logo-csjan.png';
+          const img = new Image();
+          img.src = logoUrl;
+          img.onload = () => {
+            pdf.addImage(img, 'PNG', paddingX, cursorY, 20, 20);
+      
+            // Título institucional centrado
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(12);
+      
+            const lines = [
+              'CORTE SUPERIOR DE JUSTICIA DE ANCASH',
+              'ASISTENTE VIRTUAL',
+              'APUBOT',
+              '',
+              currentConfig.titulo
+            ];
+      
+            lines.forEach((line, i) => {
+              const y = cursorY + 5 + (i * 7);
+              const textWidth = pdf.getTextWidth(line);
+              pdf.text(line, centerX - (textWidth / 2) + 10, y);
+            });
+      
+            const contentY = cursorY + (lines.length * 7) + 10;
+            pdf.addImage(imgData, 'PNG', paddingX, contentY, imgWidth, imgHeight);
+            pdf.save(currentConfig.nombreArchivo);
+          };
+        });
+      }
 
 }

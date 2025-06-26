@@ -52,6 +52,30 @@
     background-color: #ef4444 !important;
   }
 }
+.dialog-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+
+  object.typing-animation {
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+  }
+
+  .boton-centrado {
+    margin-top: 1rem;
+  }
+}
+
+.contenedor-pdf-export {
+  box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
+  padding-left: 20px;
+  padding-right: 20px;
+  background: white;
+}
 
 ::ng-deep .p-dialog-content {
   padding: 1.5rem !important;

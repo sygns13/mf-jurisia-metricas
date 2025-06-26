@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { PaginatorModule } from 'primeng/paginator';
 import { NgChartsModule } from 'ng2-charts';
 import { ChartOptions, ChartType, ChartDataset } from 'chart.js';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { FluidModule } from 'primeng/fluid';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
@@ -10,7 +12,7 @@ import { FormsModule } from '@angular/forms';
 import { TextareaModule } from 'primeng/textarea';
 import { SelectModule  } from 'primeng/select';
 import { TableModule } from 'primeng/table';
-
+import { MarkdownModule } from 'ngx-markdown';
 import { MessageService, ToastMessageOptions } from 'primeng/api';
 import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
@@ -75,6 +77,37 @@ interface FilaTemas {
     codEspecialidad: string;
     consultas: number;
 }
+interface FilaUsuarioEspecialidad {
+    instancia: string;
+    codInstancia: string;
+    idUser: number;
+    documento: string;
+    nombres: string;
+    apellidos: string;
+    username: string;
+    cargoUsuario: string;
+    codEspecialidad: string;
+    especialidad: string;
+    consultas: number;
+  }
+  interface ConsultaCabecera {
+    id: number;
+    userId: number;
+    model: string;
+    countMessages: number;
+    firstSendMessage: string;
+    lastSendMessage: string;
+    firstResponseMessage: string;
+    lastResponseMessage: string;
+    sessionUID: string;
+    regDate: string;
+    regDatetime: string;
+    regTimestamp: number;
+    updDate: string | null;
+    updDatetime: string | null;
+    updTimestamp: number | null;
+  }
+  
 
 @Component({
     selector: 'app-consultas',
@@ -94,7 +127,8 @@ interface FilaTemas {
         TooltipModule,
         DialogModule,
         Calendar,
-        NgChartsModule
+        NgChartsModule,
+        MarkdownModule
     ],
     providers: [MessageService],
     templateUrl: './consultas.component.html',
@@ -106,6 +140,7 @@ export class ConsultasComponent {
     displayFiltros: boolean = false;
     isTyping: boolean = false;
     loaderMessage: string = '';
+    loaderMessageBody: string = '';
     botonLoader: boolean = false;
     expedientes: Expediente[] = [];
     displayFiltroExpedientes: boolean = false;
@@ -123,7 +158,7 @@ export class ConsultasComponent {
     paginaActual: number = 0;
     tamanioPagina: number = 10;
 
-    tipoReporte: 'TEMAS' | 'ACUMULADO' | 'GRAFICOS' | '' = '';
+    tipoReporte: 'MISCONSULTAS' | 'TEMAS' | 'USUARIOS' | '' = '';
     buscado: boolean = false;
 
     //Listas para grafico
@@ -156,7 +191,10 @@ export class ConsultasComponent {
     documentos: Documento[] = [];
     expedientesAcumulado: FilaAcumulado[] = [];
     expedientesTemas: FilaTemas[] = [];
-
+    expedientesUsuarios: FilaUsuarioEspecialidad[] = [];
+    expedientesMisConsultas: ConsultaCabecera[] = [];
+    detallesConversacion: any[] = [];
+    displayDialogDetalles: boolean = false;
 
     constructor(
         private service: MessageService,
@@ -177,134 +215,194 @@ export class ConsultasComponent {
         this.loadInstancias();
         this.loadEspecialidades();
     }
+    validarFiltros(): boolean {
+        if(this.tipoReporte != 'MISCONSULTAS'){
+            const camposFaltantes: string[] = [];
+          
+            if (!this.instanciaSeleccionada && this.instanciaSeleccionada !== '0') {
+              camposFaltantes.push('Instancia');
+            }
+          
+            if (!this.especialidadSeleccionada && this.especialidadSeleccionada !== '0') {
+              camposFaltantes.push('Especialidad');
+            }
+          
+            if (camposFaltantes.length > 0) {
+                this.isTyping = true;
+                this.loaderMessage = 'Filtros Obligatorios';
+                this.loaderMessageBody = 'Por favor seleccione:<br> <b>' + camposFaltantes.join(', ')+'</b>';
+                this.botonLoader = true;
+                return false;
+            }
+          
+            return true;
+        }else{
+            return true;
+        }
+      }
     onBuscar(): void {
-        if (this.tipoReporte === 'TEMAS') {
-            this.buscarReporteTemas();
-            this.buscado=true;
-        } else if (this.tipoReporte === 'ACUMULADO') {
-            this.buscarReporteAcumulado();
-            this.buscado=true;
-        } else if (this.tipoReporte === 'GRAFICOS') {
-            this.cargarGraficos();
-            this.buscado=true;
+        if (this.validarFiltros()) {
+            this.loaderMessageBody = '';
+            if (this.tipoReporte === 'MISCONSULTAS') {
+                this.buscarReporteMisConsultas();
+                this.buscado=true;
+                this.displayFiltros = false;
+            } else if (this.tipoReporte === 'TEMAS') {
+                this.buscarReporteTemas();
+                this.buscado=true;
+                this.displayFiltros = false;
+            } else if (this.tipoReporte === 'USUARIOS') {
+                this.buscarReportexUsuarios();
+                this.buscado=true;
+                this.displayFiltros = false;
+            }
+        }else{
+            this.displayFiltros = true;
         }
     }
-
-    buscarReporteAcumulado(): void {
+    parseMarkdown(md: string): string {
+        return marked.parse(md || '');
+    }
+      
+    buscarReporteMisConsultas(): void {
         const body = {
-            codInstancia: this.instanciaSeleccionada && this.instanciaSeleccionada !== '0' ? this.instanciaSeleccionada : "",
-            juez: "",
+            idUser: 25,
+            model: "",
+            documento: "",
+            apellidos: "",
+            nombres: "",
+            cargo: "",
+            username: "",
+            email: "",
             fechaInicio: this.fechaInicio ? this.fechaInicio.toISOString().slice(0, 10) : "",
             fechaFin: this.fechaFin ? this.fechaFin.toISOString().slice(0, 10) : "",
-            codEspecialidad: this.especialidadSeleccionada && this.especialidadSeleccionada !== '0' ? this.especialidadSeleccionada : "",
-            idTipoDocumento: this.tipoDocumentoSeleccionado && this.tipoDocumentoSeleccionado !== 0 ? this.tipoDocumentoSeleccionado : "",
-            idDocumento: this.documentoSeleccionado && this.documentoSeleccionado !== 0 ? this.documentoSeleccionado : "",
         };
 
         this.isTyping = true;
-        this.loaderMessage = 'Generando reporte acumulado...';
+        this.loaderMessage = 'Generando reporte por usuarios...';
         this.botonLoader = false;
-
-        this.documentoService.getDocumentoGeneradoAcumulado(body).subscribe({
-            next: (res) => {
-                const filas: FilaAcumulado[] = [];
-
-                const instancia = res.instancia || '';
-                const juez = res.juez || '';
-
-                (res.especialidades || []).forEach((esp: any) => {
-                    const especialidad = esp.especialidad || '';
-
-                    (esp.tipoDocumentos || []).forEach((tipo: any) => {
-                        const tipoDocumento = tipo.tipoDocumento || '';
-
-                        (tipo.documentos || []).forEach((doc: any) => {
-                            filas.push({
-                                instancia: instancia,
-                                especialidad: especialidad,
-                                tipoDocumento: tipoDocumento,
-                                documento: doc.documento || '',
-                                juez: juez,
-                                totalDocsGenerados: doc.totalDoc || 0
-                            });
-                        });
-                    });
-                });
-
-                this.expedientesAcumulado  = filas;
-                this.totalRegistros = filas.length;
-                this.buscado = true;
-                this.isTyping = false;
+      
+        this.documentoService.getConsultaIaMisConsultas(body, this.paginaActual, this.tamanioPagina).subscribe({
+        next: (res) => {
+            console.log(res.content);
+            this.expedientesMisConsultas = res.content || [];
+            this.totalRegistros = res.totalElements;
+            this.paginaActual = res.number;
+            this.buscado = true;
+            this.isTyping = false;
             },
             error: (err) => {
-                console.error('Error al buscar documentos generados', err);
-                this.loaderMessage = 'Error al generar el reporte.';
-                this.botonLoader = true;
+            console.error('Error al buscar mis consultas', err);
+            this.loaderMessage = 'Error al generar el reporte.';
+            this.botonLoader = true;
             }
         });
-    }
-
-    cargarGraficos(): void {
+    }    
+    verDetalles(sessionUID: string): void {
         const body = {
-            codInstancia: this.instanciaSeleccionada && this.instanciaSeleccionada !== '0' ? this.instanciaSeleccionada : "",
-            juez: "",
+            sessionUID,
+            model: "",
+            idUser: "",
+            documento: "",
+            apellidos: "",
+            nombres: "",
+            cargo: "",
+            username: "",
+            email: "",
             fechaInicio: this.fechaInicio ? this.fechaInicio.toISOString().slice(0, 10) : "",
             fechaFin: this.fechaFin ? this.fechaFin.toISOString().slice(0, 10) : "",
-            codEspecialidad: this.especialidadSeleccionada && this.especialidadSeleccionada !== '0' ? this.especialidadSeleccionada : "",
-            idTipoDocumento: this.tipoDocumentoSeleccionado && this.tipoDocumentoSeleccionado !== 0 ? this.tipoDocumentoSeleccionado : "",
-            idDocumento: this.documentoSeleccionado && this.documentoSeleccionado !== 0 ? this.documentoSeleccionado : "",
         };
-
+      
+        this.documentoService.getConsultaIaDetalles(body, 0, 10).subscribe({
+          next: (res) => {
+            this.detallesConversacion = res.content || [];
+            this.displayDialogDetalles = true;
+          },
+          error: (err) => {
+            console.error('Error al obtener detalles de la sesión', err);
+          }
+        });
+      }
+      
+    buscarReportexUsuarios(): void {
+        const body = {
+          codInstancia: this.instanciaSeleccionada && this.instanciaSeleccionada !== '0' ? this.instanciaSeleccionada : "",
+          idUser: null,
+          codEspecialidad: this.especialidadSeleccionada && this.especialidadSeleccionada !== '0' ? this.especialidadSeleccionada : "",
+          fechaInicio: this.fechaInicio ? this.fechaInicio.toISOString().slice(0, 10) : "",
+          fechaFin: this.fechaFin ? this.fechaFin.toISOString().slice(0, 10) : "",
+        };
+      
         this.isTyping = true;
-        this.loaderMessage = 'Generando reporte...';
+        this.loaderMessage = 'Generando reporte por usuarios...';
         this.botonLoader = false;
-
-        this.documentoService.getDocumentoGeneradoAcumulado(body).subscribe({
-            next: (res) => {
-                const especialidades = res?.especialidades || [];
-
-                this.graficosPorEspecialidad = especialidades.map((esp: any) => {
-                    const documentosUnificados: { [docNombre: string]: number } = {};
-
-                    esp.tipoDocumentos?.forEach((tipoDoc: any) => {
-                        tipoDoc.documentos?.forEach((doc: any) => {
-                            if (!documentosUnificados[doc.documento]) {
-                                documentosUnificados[doc.documento] = 0;
-                            }
-                            documentosUnificados[doc.documento] += doc.totalDoc || 0;
-                        });
-                    });
-
-                    const labels = Object.keys(documentosUnificados);
-                    const values = Object.values(documentosUnificados);
-
-                    return {
-                        nombre: esp.especialidad,
-                        labels: labels,
-                        barData: [{
-                            label: 'Total Documentos',
-                            data: values,
-                            backgroundColor: 'rgba(220, 53, 69, 0.6)',
-                            borderColor: '#b00600',
-                            borderWidth: 1
-                        }],
-                        lineData: [{
-                            label: 'Total Documentos',
-                            data: values,
-                            borderColor: '#b00600',
-                            fill: false,
-                            tension: 0.3
-                        }]
-                    };
+      
+        this.documentoService.getConsultaIaxUsuarios(body).subscribe({
+          next: (res) => {
+            const filas: FilaUsuarioEspecialidad[] = [];
+      
+            res.usuarios.forEach((usuario: any) => {
+              usuario.especialidades.forEach((esp: any) => {
+                filas.push({
+                  instancia: res.instancia,
+                  codInstancia: res.codInstancia,
+                  idUser: usuario.idUser,
+                  documento: usuario.documento,
+                  nombres: usuario.nombres,
+                  apellidos: usuario.apellidos,
+                  username: usuario.username,
+                  cargoUsuario: usuario.cargoUsuario,
+                  codEspecialidad: esp.codEspecialidad,
+                  especialidad: esp.especialidad,
+                  consultas: esp.consultas
                 });
+              });
+            });
+      
+            this.expedientesUsuarios = filas;
+            this.totalRegistros = filas.length;
+            this.buscado = true;
+            this.isTyping = false;
 
-                this.isTyping =  false;
-            },
-            error: (err) => {
-                console.error('Error al generar gráfico', err);
-                this.loaderMessage = 'Error al generar el gráfico.';
-                this.botonLoader = true;
-            }
+            this.graficosPorEspecialidad = res.usuarios.map((usuario: any) => {
+                // Consolidar datos por especialidad (en caso de duplicados)
+                const agregados: { [nombre: string]: number } = {};
+                usuario.especialidades.forEach((esp: any) => {
+                  if (!agregados[esp.especialidad]) {
+                    agregados[esp.especialidad] = 0;
+                  }
+                  agregados[esp.especialidad] += esp.consultas;
+                });
+              
+                const labels = Object.keys(agregados);
+                const values = Object.values(agregados);
+              
+                return {
+                  nombre: `${usuario.nombres} ${usuario.apellidos}`,
+                  labels: labels,
+                  barData: [{
+                    label: 'Consultas por Especialidad',
+                    data: values,
+                    backgroundColor: 'rgba(220, 53, 69, 0.6)',
+                    borderColor: '#b00600',
+                    borderWidth: 1
+                  }],
+                  lineData: [{
+                    label: 'Consultas por Especialidad',
+                    data: values,
+                    borderColor: '#b00600',
+                    fill: false,
+                    tension: 0.3
+                  }]
+                };
+              });
+              
+          },
+          error: (err) => {
+            console.error('Error al buscar reporte por usuarios', err);
+            this.loaderMessage = 'Error al generar el reporte.';
+            this.botonLoader = true;
+          }
         });
     }
     cerrarLoader() {
@@ -381,7 +479,11 @@ export class ConsultasComponent {
             }
         });
     }
-
+    onPaginar(event: any) {
+        this.paginaActual = event.page;
+        this.tamanioPagina = event.rows;
+        this.buscarReporteMisConsultas(); // o pasa el page/size como body si tu API lo admite
+      }
     buscarReporteTemas(): void {
         const body = {
             codInstancia: this.instanciaSeleccionada && this.instanciaSeleccionada !== '0' ? this.instanciaSeleccionada : "",
@@ -406,10 +508,33 @@ export class ConsultasComponent {
                     consultas: esp.consultas
                 }));
 
-                this.expedientesTemas = filas; // Usa nueva variable
-                this.totalRegistros = filas.length;
-                this.buscado = true;
-                this.isTyping = false;
+            this.expedientesTemas = filas; // Usa nueva variable
+            this.totalRegistros = filas.length;
+            this.buscado = true;
+            this.isTyping = false;
+
+            const labels = filas.map(f => f.especialidad);
+            const data = filas.map(f => f.consultas);
+
+            this.graficosPorEspecialidad = [{
+            nombre: res.instancia,
+            labels,
+                barData: [{
+                    label: 'Consultas',
+                    data,
+                    backgroundColor: 'rgba(220, 53, 69, 0.6)',
+                    borderColor: '#b00600',
+                    borderWidth: 1
+                }],
+                lineData: [{
+                    label: 'Consultas',
+                    data,
+                    borderColor: '#b00600',
+                    backgroundColor: 'rgba(220, 53, 69, 0.6)',
+                    fill: false,
+                    tension: 0.3
+                }]
+            }];
             },
             error: (err) => {
                 console.error('Error al buscar documentos generados', err);
@@ -418,5 +543,87 @@ export class ConsultasComponent {
             }
         });
     }
+    exportarPDF(): void {
 
+        if (!this.buscado) {
+            this.isTyping = true;
+            this.loaderMessage = 'Alerta!';
+            this.loaderMessageBody = 'Debe generar un reporte antes de exportar';
+            this.botonLoader = true;
+            return;
+        }
+
+        const config = {
+          'MISCONSULTAS': {
+            idContenedor: 'contenedorPdfMisConsultas',
+            titulo: 'REPORTE DE MIS CONSULTAS',
+            nombreArchivo: 'Reporte-mis-consultas.pdf'
+          },
+          'TEMAS': {
+            idContenedor: 'contenedorPdfTemas',
+            titulo: 'REPORTE DE CONSULTAS POR TEMAS',
+            nombreArchivo: 'Reporte-consultas-por-temas.pdf'
+          },
+          'USUARIOS': {
+            idContenedor: 'contenedorPdfUsuarios',
+            titulo: 'REPORTE DE CONSULTAS POR USUARIOS',
+            nombreArchivo: 'Reporte-consultas-por-usuarios.pdf'
+          }
+        };
+      
+        if (!this.tipoReporte || !(this.tipoReporte in config)) return;
+
+        const currentConfig = config[this.tipoReporte as 'MISCONSULTAS' | 'TEMAS' | 'USUARIOS'];
+
+        const dataElement = document.getElementById(currentConfig.idContenedor);
+        if (!dataElement) return;
+      
+        html2canvas(dataElement, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          useCORS: true
+        }).then(canvas => {
+          const imgData = canvas.toDataURL('image/png');
+          const pdf = new jsPDF('p', 'mm', 'a4');
+      
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const paddingX = 15;
+          const imgWidth = pageWidth - paddingX * 2;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+          const centerX = pageWidth / 2;
+          let cursorY = 15;
+      
+          const logoUrl = 'assets/img/logo-csjan.png';
+          const img = new Image();
+          img.src = logoUrl;
+          img.onload = () => {
+            pdf.addImage(img, 'PNG', paddingX, cursorY, 20, 20);
+      
+            // Título institucional centrado
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(12);
+      
+            const lines = [
+              'CORTE SUPERIOR DE JUSTICIA DE ANCASH',
+              'ASISTENTE VIRTUAL',
+              'APUBOT',
+              '',
+              currentConfig.titulo
+            ];
+      
+            lines.forEach((line, i) => {
+              const y = cursorY + 5 + (i * 7);
+              const textWidth = pdf.getTextWidth(line);
+              pdf.text(line, centerX - (textWidth / 2) + 10, y);
+            });
+      
+            const contentY = cursorY + (lines.length * 7) + 10;
+            pdf.addImage(imgData, 'PNG', paddingX, contentY, imgWidth, imgHeight);
+            pdf.save(currentConfig.nombreArchivo);
+          };
+        });
+      }
+      
+          
 }

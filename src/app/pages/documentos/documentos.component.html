@@ -9,7 +9,7 @@
                   label="Reporte Detallado"
                   icon="pi pi-list"
                   class="redbutton"
-                  (click)="tipoReporte = 'DETALLADO'; displayFiltros = true"
+                  (click)="tipoReporte = 'DETALLADO'; displayFiltros = true; buscado=false;"
                   [style]="{ width: 'auto' }">
           </button>
 
@@ -17,7 +17,7 @@
                   label="Reporte Acumulado"
                   icon="pi pi-database"
                   class="redbutton"
-                  (click)="tipoReporte = 'ACUMULADO'; displayFiltros = true"
+                  (click)="tipoReporte = 'ACUMULADO'; displayFiltros = true; buscado=false;"
                   [style]="{ width: 'auto' }">
           </button>
 
@@ -25,7 +25,14 @@
                   label="Reporte Gráficos"
                   icon="pi pi-chart-bar"
                   class="redbutton"
-                  (click)="tipoReporte = 'GRAFICOS'; displayFiltros = true"
+                  (click)="tipoReporte = 'GRAFICOS'; displayFiltros = true; buscado=false;"
+                  [style]="{ width: 'auto' }">
+          </button>
+          <button pButton
+                  label="Exportar PDF"
+                  icon="pi pi-file-pdf"
+                  class="redbutton"
+                  (click)="exportarPDF()" 
                   [style]="{ width: 'auto' }">
           </button>
         </div>
@@ -53,21 +60,37 @@
     </div>
   </ng-template>
 
-  <div class="dialog-content">
+  <div class="dialog-content" *ngIf="!loaderMessageBody" style="display: flex; justify-content: center; padding: 1rem;">
     <object
       data="assets/animations/ApuBotTyping.svg"
       type="image/svg+xml"
-      class="typing-animation">
+      class="typing-animation"
+      style="width: 120px; height: 120px;">
     </object>
-    <div class="boton-centrado">
-      <button *ngIf="botonLoader"
-              pButton
-              label="Aceptar"
-              class="redbutton"
-              style="margin-top: 1rem;"
-              (click)="cerrarLoader()">
-      </button>
+  </div>
+
+  <div class="dialog-content" *ngIf="loaderMessageBody" style="display: flex; align-items: center; gap: 1rem;">
+    <!-- Robot SVG -->
+    <object
+      data="assets/animations/ApuBotTyping.svg"
+      type="image/svg+xml"
+      class="typing-animation"
+      style="width: 80px; height: 80px; flex-shrink: 0;">
+    </object>
+  
+    <!-- Texto del mensaje -->
+    <div style="flex: 1;">
+      <div [innerHTML]="loaderMessageBody" style="font-size: 1.04rem"></div>
     </div>
+  </div>
+  <div class="boton-centrado">
+    <button *ngIf="botonLoader"
+            pButton
+            label="Aceptar"
+            class="redbutton"
+            style="margin-top: 1rem;"
+            (click)="cerrarLoader()">
+    </button>
   </div>
 </p-dialog>
 <!--END LOADER-->
@@ -76,102 +99,105 @@
 <div class="p-fluid box">
   <div class="p-field p-grid">
     <div class="results-table">
-      <div class="results-table" *ngIf="tipoReporte === 'DETALLADO' && buscado">
-        <p-table *ngIf="tipoReporte === 'DETALLADO'" [value]="expedientes" showGridlines [responsiveLayout]="'scroll'">
-          <ng-template pTemplate="header">
-            <tr>
-              <th>INSTANCIA</th>
-              <th>ESPECIALIDAD</th>
-              <th>MATERIA</th>
-              <th>TIPO DOCUMENTO</th>
-              <th>DOCUMENTO</th>
-              <th>UBICACIÓN</th>
-              <th>JUEZ</th>
-              <th>FECHA GENERADO</th>
-            </tr>
-          </ng-template>
-          <ng-template pTemplate="body" let-expediente>
-            <tr>
-              <td>{{ expediente.instancia }}</td>
-              <td>{{ expediente.especialidad }}</td>
-              <td>{{ expediente.materia }}</td>
-              <td>{{ expediente.tipoDocumento }}</td>
-              <td>{{ expediente.documento }}</td>
-              <td>{{ expediente.ubicacion }}</td>
-              <td>{{ expediente.juez }}</td>
-              <td>{{ expediente.regDate }}</td>
-            </tr>
-          </ng-template>
-        </p-table>
-        <p-paginator
-          [rows]="tamanioPagina"
-          [totalRecords]="totalRegistros"
-          [rowsPerPageOptions]="[5, 10, 20, 50]"
-          (onPageChange)="onPaginar($event)">
-        </p-paginator>
+      <div id="contenedorPdfDetallado" class="contenedor-pdf-export">
+        <div class="results-table" *ngIf="tipoReporte === 'DETALLADO' && buscado">
+          <p-table *ngIf="tipoReporte === 'DETALLADO'" [value]="expedientes" showGridlines [responsiveLayout]="'scroll'">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>INSTANCIA</th>
+                <th>ESPECIALIDAD</th>
+                <th>MATERIA</th>
+                <th>TIPO DOCUMENTO</th>
+                <th>DOCUMENTO</th>
+                <th>UBICACIÓN</th>
+                <th>JUEZ</th>
+                <th>FECHA GENERADO</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-expediente>
+              <tr>
+                <td>{{ expediente.instancia }}</td>
+                <td>{{ expediente.especialidad }}</td>
+                <td>{{ expediente.materia }}</td>
+                <td>{{ expediente.tipoDocumento }}</td>
+                <td>{{ expediente.documento }}</td>
+                <td>{{ expediente.ubicacion }}</td>
+                <td>{{ expediente.juez }}</td>
+                <td>{{ expediente.regDate }}</td>
+              </tr>
+            </ng-template>
+          </p-table>
+          <p-paginator
+            [rows]="tamanioPagina"
+            [totalRecords]="totalRegistros"
+            [rowsPerPageOptions]="[5, 10, 20, 50]"
+            (onPageChange)="onPaginar($event)">
+          </p-paginator>
+        </div>
       </div>
-      <div class="results-table" *ngIf="tipoReporte === 'ACUMULADO' && buscado">
-        <p-table [value]="expedientesAcumulado" showGridlines [responsiveLayout]="'scroll'">
-          <ng-template pTemplate="header">
-            <tr>
-              <th>INSTANCIA</th>
-              <th>ESPECIALIDAD</th>
-              <th>MATERIA</th>
-              <th>TIPO DOCUMENTO</th>
-              <th>DOCUMENTO</th>
-              <th>JUEZ</th>
-              <th class="text-right">TOTAL</th>
-            </tr>
-          </ng-template>
-          <ng-template pTemplate="body" let-item>
-            <tr>
-              <td>{{ item.instancia }}</td>
-              <td>{{ item.especialidad }}</td>
-              <td>{{ item.materia }}</td>
-              <td>{{ item.tipoDocumento }}</td>
-              <td>{{ item.documento }}</td>
-              <td>{{ item.juez }}</td>
-              <td class="text-right">{{ item.totalDocsGenerados }}</td>
-            </tr>
-          </ng-template>
-        </p-table>
-        <p-paginator
-          [rows]="tamanioPagina"
-          [totalRecords]="totalRegistros"
-          [rowsPerPageOptions]="[5, 10, 20, 50]"
-          (onPageChange)="onPaginar($event)">
-        </p-paginator>
-      </div>
+      <div id="contenedorPdfAcumulado" class="contenedor-pdf-export">
+        <div class="results-table" *ngIf="tipoReporte === 'ACUMULADO' && buscado">
+          <p-table [value]="expedientesAcumulado" showGridlines [responsiveLayout]="'scroll'">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>INSTANCIA</th>
+                <th>ESPECIALIDAD</th>
+                <th>MATERIA</th>
+                <th>TIPO DOCUMENTO</th>
+                <th>DOCUMENTO</th>
+                <th>JUEZ</th>
+                <th class="text-right">TOTAL</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-item>
+              <tr>
+                <td>{{ item.instancia }}</td>
+                <td>{{ item.especialidad }}</td>
+                <td>{{ item.materia }}</td>
+                <td>{{ item.tipoDocumento }}</td>
+                <td>{{ item.documento }}</td>
+                <td>{{ item.juez }}</td>
+                <td class="text-right">{{ item.totalDocsGenerados }}</td>
+              </tr>
+            </ng-template>
+          </p-table>
+          <p-paginator
+            [rows]="tamanioPagina"
+            [totalRecords]="totalRegistros"
+            [rowsPerPageOptions]="[5, 10, 20, 50]"
+            (onPageChange)="onPaginar($event)">
+          </p-paginator>
+        </div>
+    </div>
       <!-- GRAFICOS -->
-      <div class="results-table" *ngIf="tipoReporte === 'GRAFICOS' && buscado">
-        <div *ngFor="let grafico of graficosPorEspecialidad" style="margin-bottom: 3rem;">
-          <h4 style="text-align: center;">{{ grafico.nombre }}</h4>
-          <div style="display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center;">
+      <div id="contenedorPdfGraficos" class="contenedor-pdf-export">
+        <div class="results-table" *ngIf="tipoReporte === 'GRAFICOS' && buscado">
+          <div *ngFor="let grafico of graficosPorEspecialidad" style="margin-bottom: 3rem;">
+            <h4 style="text-align: center;">{{ grafico.nombre }}</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center;">
 
-            <!-- Gráfico de barras -->
-            <div style="flex: 0 0 calc(40% - 16px)">
-              <canvas baseChart
-                      [data]="{ labels: grafico.labels, datasets: grafico.barData }"
-                      [options]="barChartOptions"
-                      [type]="'bar'">
-              </canvas>
+              <!-- Gráfico de barras -->
+              <div style="flex: 0 0 calc(40% - 16px)">
+                <canvas baseChart
+                        [data]="{ labels: grafico.labels, datasets: grafico.barData }"
+                        [options]="barChartOptions"
+                        [type]="'bar'">
+                </canvas>
+              </div>
+
+              <!-- Gráfico de líneas -->
+              <div style="flex: 0 0 calc(40% - 16px)">
+                <canvas baseChart
+                        [data]="{ labels: grafico.labels, datasets: grafico.lineData }"
+                        [options]="lineChartOptions"
+                        [type]="'line'">
+                </canvas>
+              </div>
+
             </div>
-
-            <!-- Gráfico de líneas -->
-            <div style="flex: 0 0 calc(40% - 16px)">
-              <canvas baseChart
-                      [data]="{ labels: grafico.labels, datasets: grafico.lineData }"
-                      [options]="lineChartOptions"
-                      [type]="'line'">
-              </canvas>
-            </div>
-
           </div>
         </div>
       </div>
-
-
-
     </div>
   </div>
 </div>
@@ -250,13 +276,16 @@
     <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;">
       <div style="display: flex; flex-direction: column; gap: 4px;">
         <label for="documento">Documento</label>
-        <p-select id="documento" [(ngModel)]="documentoSeleccionado"
+        <p-select id="documento"
+                  [(ngModel)]="documentoSeleccionado"
                   [options]="documentosFiltrados"
                   optionLabel="descripcion"
                   optionValue="idDocumento"
                   placeholder="Seleccione Documento"
+                  [disabled]="documentoDisabled"
                   #cbuDocumento>
         </p-select>
+
       </div>
     </div>
     <div style="flex: 0 0 calc(25% - 16px); box-sizing: border-box;">
@@ -294,7 +323,7 @@
         <button pButton
                 label="Buscar"
                 icon="pi pi-search"
-                (click)="onBuscar(); displayFiltros = false;"
+                (click)="onBuscar();"
                 class="redbutton"
                 [style]="{ width: 'auto' }">
         </button>

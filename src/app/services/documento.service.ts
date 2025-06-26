@@ -43,7 +43,19 @@ export class DocumentoService {
         const url = `${baseUrl}/consulta-ia/temas`;
         return this.http.post<any>(url, body);
   }
-
+  getConsultaIaxUsuarios(body: any): Observable<any> {
+        const url = `${baseUrl}/consulta-ia/users`;
+        return this.http.post<any>(url, body);
+  }
+  getConsultaIaMisConsultas(body: any, page: number = 0, size: number = 10): Observable<any> {
+    const url = `${baseUrl}/consulta-ia/cabeceras?page=${page}&size=${size}`;
+    return this.http.post<any>(url, body);
+  }
+  getConsultaIaDetalles(body: any, page: number = 0, size: number = 10): Observable<any> {
+    const url = `${baseUrl}/consulta-ia/detalles?page=${page}&size=${size}`;
+    return this.http.post<any>(url, body);
+  }
+  
 
 
 }
