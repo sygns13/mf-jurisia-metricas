@@ -1,0 +1,364 @@
+<p-toast />
+<div class="container">
+  <p-fluid class="flex flex-col md:flex-row gap-8">
+    <div class="md:w-1/2">
+      <div class="card flex flex-col gap-4">
+        <h3>Gestión de Usuarios</h3>
+        <div class="m-2">
+          <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+            <div style="flex: 0 0 calc(45% - 16px); box-sizing: border-box;">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label for="buscar">Filtro</label>
+                <input pInputText id="buscar" [(ngModel)]="buscar" (keyup.enter)="buscarUsuarios(true)"
+                    type="text"/>
+              </div>
+            </div>
+            <div style="flex: 0 0 calc(25% - 16px); box-sizing: border-box;">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label for="instancia">Instancia</label>
+                <p-select id="instancia" [(ngModel)]="instanciaSeleccionada"
+                          [options]="instancias"
+                          optionLabel="instancia"
+                          optionValue="codigoInstancia"
+                          placeholder="Seleccione Instancia"
+                          (onChange)="buscarUsuarios()"
+                          [filter]="true" filterBy="instancia">
+                </p-select>
+              </div>
+            </div>            
+            <div style="flex: 0 0 calc(15% - 16px); box-sizing: border-box;">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label for="buscar"  style="color: #ffffff;">Búsqueda</label>
+                <button pButton label="Buscar" icon="pi pi-search" (click)="buscarUsuarios(true)" class="redbutton" [style]="{ width: 'auto' }"></button>
+              </div>
+            </div>
+            <div style="flex: 0 0 calc(15% - 16px); box-sizing: border-box;">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label for="nuevo"  style="color: #ffffff;">Nuevo</label>
+                <button pButton label="Nuevo" icon="pi pi-plus" (click)="nuevoUsuario()" class="redbutton" [style]="{ width: 'auto' }"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </p-fluid>
+ 
+  <br>
+
+
+  <!-- Nuevo Usuario -->
+<!-- <p-dialog [(visible)]="displayCreateUsuarios"
+          [breakpoints]="{ '960px': '75vw' }"
+          [style]="{ width: '45vw' }"
+          [modal]="true"
+          [contentStyle]="{ 'overflow': 'visible' }">
+
+  <ng-template #header>
+    <div class="inline-flex items-center justify-center gap-2" style="color: white;">
+      <span class="font-bold whitespace-nowrap">LISTAR EXPEDIENTE</span>
+    </div>
+  </ng-template>
+  <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+    <div style="flex: 0 0 calc(50% - 16px); box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label for="tipoUsuario">Tipo Usuario</label>
+        <p-select id="tipoUsuario" [(ngModel)]="tipoUsuarioSeleccionado"
+                  [options]="tipoUsuarios"
+                  optionLabel="nombre"
+                  optionValue="id"
+                  placeholder="Seleccione Tipo"
+                  [filter]="true" filterBy="nombre">
+        </p-select>
+      </div>
+    </div>
+    <div style="flex: 0 0 calc(33.333% - 16px); box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label for="documento">N° Documento</label>
+        <input pInputText id="documento" [(ngModel)]="documento"
+             type="text" appSoloNumerosEnteros />
+      </div>
+    </div>
+    <div style="flex: 0 0 calc(33.333% - 16px); box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label for="apellidos">Apellidos</label>
+        <input pInputText id="documento" [(ngModel)]="apellidos"
+             type="text" />
+      </div>
+    </div>
+    <div style="flex: 0 0 calc(33.333% - 16px); box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label for="nombres">Nombres</label>
+        <input pInputText id="nombres" [(ngModel)]="nombres"
+             type="text" />
+      </div>
+    </div>
+    <div style="flex: 0 0 calc(33.333% - 16px); box-sizing: border-box;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <label for="cargo">Cargo</label>
+        <input pInputText id="cargo" [(ngModel)]="cargo" type="text"/>
+      </div>
+    </div>
+  </div>
+  <ng-template #footer>
+    <div style="width: 100%;">
+      <hr style="width: 100%; border: none; border-top: 1px solid #ccc; margin-bottom: 1rem;margin-top: 0px!important;">
+      <div style="display: flex; justify-content: flex-end;">
+        <button pButton
+                label="Buscar"
+                icon="pi pi-search"
+                (click)="crearUsuario(); displayCreateUsuarios = false;"
+                class="redbutton"
+                [style]="{ width: 'auto' }">
+        </button>
+      </div>
+    </div>
+  </ng-template>
+</p-dialog> -->
+
+<!-- p-dialog para NUEVO USUARIO -->
+<p-dialog [(visible)]="displayCreateUsuarios"
+          [breakpoints]="{ '960px': '75vw' }"
+          [style]="{ width: '55vw' }"
+          [modal]="true"
+          [contentStyle]="{ 'overflow': 'visible' }">
+
+  <ng-template #header>
+    <div class="inline-flex items-center justify-center gap-2" style="color: white;">
+      <span class="font-bold whitespace-nowrap">CREAR USUARIO</span>
+    </div>
+  </ng-template>
+
+  <div style="display:flex;flex-wrap:wrap;gap:16px;">
+    <div style="flex:0 0 calc(33.333% - 16px);">
+      <label for="instanciaCrea">Instancia</label>
+      <p-select id="instanciaCrea"
+        [(ngModel)]="instanciaSeleccionada"
+        [options]="instancias"
+        optionLabel="instancia"
+        optionValue="codigoInstancia"
+        placeholder="Seleccione Instancia"
+        [filter]="true" filterBy="instancia">
+      </p-select>
+    </div>
+
+    <div style="flex:0 0 calc(33.333% - 16px);">
+      <label for="tipoUsuario">Tipo Usuario</label>
+      <p-select id="tipoUsuario"
+        [(ngModel)]="tipoUsuarioSeleccionado"
+        [options]="tipoUsuarios"
+        optionLabel="nombre"
+        optionValue="id"
+        placeholder="Seleccione Tipo"
+        [filter]="true" filterBy="nombre">
+      </p-select>
+    </div>
+
+    <div style="flex:0 0 calc(33.333% - 16px);">
+      <label for="tipoDoc">Tipo Doc.</label>
+      <p-select id="tipoDoc"
+        [(ngModel)]="tipoDocumento"
+        [options]="[{label:'DNI',value:1},{label:'CE',value:2}]">
+      </p-select>
+    </div>
+
+    <div style="flex:0 0 calc(33.333% - 16px);">
+      <label for="documento">N° Documento</label>
+      <input pInputText id="documento" [(ngModel)]="documento" type="text" appSoloNumerosEnteros />
+    </div>
+
+    <div style="flex:0 0 calc(33.333% - 16px);">
+      <label for="apellidos">Apellidos</label>
+      <input pInputText id="apellidos" [(ngModel)]="apellidos" type="text"/>
+    </div>
+
+    <div style="flex:0 0 calc(33.333% - 16px);">
+      <label for="nombres">Nombres</label>
+      <input pInputText id="nombres" [(ngModel)]="nombres" type="text"/>
+    </div>
+    <div style="flex:0 0 calc(33.333% - 16px);">
+      <label for="cargo">Cargo</label>
+      <input pInputText id="cargo" [(ngModel)]="cargo" type="text"/>
+    </div>
+    <div style="flex:0 0 calc(33.333% - 16px);">
+      <label for="username">Usuario</label>
+      <input pInputText id="username" [(ngModel)]="username" type="text"/>
+    </div>
+
+    <div style="flex:0 0 calc(33.333% - 16px);">
+      <label for="password">Contraseña</label>
+      <input pInputText id="password" [(ngModel)]="password" type="password" autocomplete="new-password"/>
+    </div>
+
+    <div style="flex:0 0 calc(33.333% - 16px);">
+      <label for="email">Email</label>
+      <input pInputText id="email" [(ngModel)]="email" type="email"/>
+    </div>
+
+    <div style="flex:0 0 calc(33.333% - 16px);">
+      <label for="genero">Género</label>
+      <p-select id="genero"
+        [(ngModel)]="genero"
+        [options]="[{label:'Masculino',value:1},{label:'Femenino',value:2}]">
+      </p-select>
+    </div>
+
+    <div style="flex:0 0 calc(33.333% - 16px);">
+      <label for="telefono">Teléfono</label>
+      <input pInputText id="telefono" [(ngModel)]="telefono" type="text"/>
+    </div>
+
+    <div style="flex:0 0 calc(33.333% - 16px);">
+      <label for="direccion">Dirección</label>
+      <input pInputText id="direccion" [(ngModel)]="direccion" type="text"/>
+    </div>
+
+    <div style="flex:0 0 calc(33.333% - 16px);">
+      <label for="activo">Estado</label>
+      <p-select id="activo"
+        [(ngModel)]="activo"
+        [options]="[{label:'Activo',value:1},{label:'Inactivo',value:0}]">
+      </p-select>
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <div style="width:100%;">
+      <hr style="width:100%;border:none;border-top:1px solid #ccc;margin:0 0 1rem;">
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button pButton label="Cancelar" class="p-button-secondary" (click)="displayCreateUsuarios=false"></button>
+        <button pButton label="Crear" icon="pi pi-check" (click)="crearUsuario()"
+                class="redbutton" [style]="{ width: 'auto' }"></button>
+      </div>
+    </div>
+  </ng-template>
+</p-dialog>
+
+
+
+
+
+    <!--Dialog Roles-->
+  <p-dialog
+    [(visible)]="showRolesDialog"
+    [modal]="true"
+    [closable]="true"
+    [dismissableMask]="false"
+    [baseZIndex]="11000"
+    [style]="{ width: '520px'}">
+
+    <ng-template #header>
+      <div class="inline-flex items-center justify-center gap-2" style="color: white;">
+        <span class="font-bold whitespace-nowrap">ASIGNAR ROLES A USUARIO</span>
+      </div>
+    </ng-template>
+
+    <div *ngIf="currentUserForRoles" class="mb-3">
+      <strong>Usuario:</strong> {{ currentUserForRoles.username }}<br>
+      <small>{{ currentUserForRoles.nombres }} {{ currentUserForRoles.apellidos }}</small>
+    </div>
+  <hr>
+    <div class="flex flex-col gap-2">
+      <div *ngFor="let r of rolesSistema" class="flex items-center gap-2">
+        <p-checkbox
+          [binary]="true"
+          [ngModel]="selectedRoleIds.includes(r.id)"
+          (onChange)="toggleRole(r.id, $event.checked)">
+        </p-checkbox>
+        <span class="font-medium">{{ r.name }}</span>
+        <small class="text-color-secondary">— {{ r.descripcion }}</small>
+      </div>
+    </div>
+  <hr>
+    <ng-template pTemplate="footer">
+      <!-- <button pButton label="Cancelar" class="p-button-text" (click)="closeRolesDialog()"></button>
+       -->
+      <button pButton label="Guardar" icon="pi pi-check" class="redbutton" (click)="saveUserRoles()"></button>
+    </ng-template>
+  </p-dialog>
+
+  <!--Loader ApuBot-->
+  <p-dialog
+    [(visible)]="isTyping"
+    modal="true"
+    [closable]="false"
+    [dismissableMask]="true"
+    [draggable]="false"
+    class="dialog-typing"
+    [style]="{ width: '300px' }"
+  > 
+    <ng-template pTemplate="header">
+      <div class="dialog-header-centered">
+        <i class="pi pi-info-circle icon-alert" style="font-size: 1.2rem;color: #ffffff"></i>
+        <span class="title-text" style="font-size: 1.2rem;margin-left: 0.8rem;color: #ffffff;font-weight: bold">{{ loaderMessage }}</span>
+      </div>
+    </ng-template>
+
+    <div class="dialog-content">
+      <object
+        data="assets/animations/ApuBotTyping.svg"
+        type="image/svg+xml"
+        class="typing-animation">
+      </object>
+      <div class="boton-centrado">
+        <button *ngIf="botonLoader"
+                pButton
+                label="Aceptar"
+                class="redbutton"
+                style="margin-top: 1rem;"
+                (click)="cerrarLoader()">
+        </button>
+      </div>
+    </div>
+  </p-dialog>
+<!--END LOADER-->
+
+  <div class="p-fluid box">
+    <div class="p-field p-grid">
+      <div class="results-table">
+        <p-table [value]="usuarios" showGridlines [responsiveLayout]="'scroll'">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Usuario</th>
+              <th>Cargo</th>
+              <th>Nombres</th>
+              <th>N° Documento</th>
+              <th>Dependencia</th>
+              <th>Email</th>
+              <th>Acciones</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-user>
+            <tr>
+              <td>{{ user.username }}</td>
+              <td>{{ user.cargo }}</td>
+              <td>{{ user.nombres }}</td>
+              <td>{{ user.documento }}</td>
+              <td>{{ user.dependencia?.nombre }}</td>
+              <td>{{ user.email }}</td>
+              <td class="text-center">
+                  <p-button
+                    icon="pi pi-shield"
+                    pTooltip="Asignar roles"
+                    styleClass="p-button-text"
+                    (onClick)="openRolesDialog(user)">
+                  </p-button>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="8">No se encontraron expedientes.</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+
+
+
